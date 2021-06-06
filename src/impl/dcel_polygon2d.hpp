@@ -16,7 +16,6 @@
 namespace geom {
 
 struct Vertex;
-struct Face;
 
 struct HalfEdge {
   const Vertex* origin;
@@ -28,13 +27,6 @@ struct HalfEdge {
   HalfEdge(const Vertex* origin, const Vector2D& v) :
       origin(origin), angle(std::atan2(v.y, v.x)) {}
 };
-
-//*
-void PrintEdge(HalfEdge* edge);
-void PrintEdgeL(HalfEdge* edge);
-void PrintEdgeWithTwin(HalfEdge* edge);
-void PrintEdgeWithTwinL(HalfEdge* edge);
-//*/
 
 struct Vertex {
   struct HalfEdgeAngleComparator {
@@ -63,7 +55,7 @@ struct Vertex {
   }
 };
 
-bool operator<(const Vertex& lhv, const Vertex& rhv) {
+inline bool operator<(const Vertex& lhv, const Vertex& rhv) {
   return lhv.point < rhv.point;
 }
 
@@ -72,30 +64,6 @@ struct Face {
 
   explicit Face(HalfEdge* edge) : edge(edge) {}
 };
-
-//*
-void PrintEdge(HalfEdge* edge) {
-  PrintPoint(edge->origin->point);
-  std::cerr << " -> ";
-  PrintPoint(edge->next->origin->point);
-}
-
-void PrintEdgeL(HalfEdge* edge) {
-  PrintEdge(edge);
-  PrintL();
-}
-
-void PrintEdgeWithTwin(HalfEdge* edge) {
-  PrintEdge(edge);
-  std::cerr << " : ";
-  PrintEdge(edge->twin);
-}
-
-void PrintEdgeWithTwinL(HalfEdge* edge) {
-  PrintEdgeWithTwin(edge);
-  PrintL();
-}
-//*/
 
 class DcelPolygon2D {
  public:
@@ -159,16 +127,6 @@ class DcelPolygon2D {
 
       current = next;
     }
-
-    /*
-    Face face = Face(pnt_to_edge_forward[current]);
-    HalfEdge* start_edge = face.edge;
-    HalfEdge* edge = face.edge;
-    do {
-      PrintEdgeWithTwinL(edge);
-      edge = edge->next;
-    } while (edge != start_edge);
-    //*/
   }
 
   void InsertEdge(const Segment2D& edge) {

@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
 
 #include <impl/dcel_polygon2d.hpp>
+#include <impl/decomposition.hpp>
 #include <impl/geom_utils.hpp>
 #include <impl/polygon2d.hpp>
-#include <test_utils/decomposition_utils.hpp>
+#include <test_utils/decomposition_utils.h>
 
 namespace decomposition_tests {
 

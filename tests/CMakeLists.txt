@@ -1,4 +1,7 @@
-set(TEST_SOURCES utils_tests.cpp)
+set(TEST_SOURCES
+    test_utils/decomposition_utils.cpp
+    make_monotone_tests.cpp
+    utils_tests.cpp)
 add_executable(decomposition_tests ${TEST_SOURCES})
 target_include_directories(decomposition_tests PRIVATE .)
 target_link_libraries(decomposition_tests gtest gtest_main ${PROJECT_NAME})
