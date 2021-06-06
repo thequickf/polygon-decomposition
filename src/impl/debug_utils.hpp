@@ -6,20 +6,33 @@
 
 #include <iostream>
 
-void PrintL() {
+inline void PrintL() {
   std::cerr << std::endl;
 }
 
-void PrintPoint(const geom::Point2D& point) {
+inline void PrintPoint(const geom::Point2D& point) {
   std::cerr << "(" << point.x << ", " << point.y << ")";
 }
 
-void PrintPointL(const geom::Point2D& point) {
+inline void PrintPointL(const geom::Point2D& point) {
   PrintPoint(point);
   std::cerr << std::endl;
 }
 
-void PrintPolygon(const geom::Polygon2D& polygon) {
+inline void PrintSegment2D(const geom::Segment2D& segment) {
+  std::cerr << "(";
+  PrintPoint(segment.a);
+  std::cerr << ", ";
+  PrintPoint(segment.b);
+  std::cerr << ")";
+}
+
+inline void PrintSegment2DL(const geom::Segment2D& segment) {
+  PrintSegment2D(segment);
+  PrintL();
+}
+
+inline void PrintPolygon(const geom::Polygon2D& polygon) {
   if (polygon.Size() == 0)
     return;
   geom::Point2D current = polygon.GetAnyPoint().value();
@@ -32,7 +45,7 @@ void PrintPolygon(const geom::Polygon2D& polygon) {
   return;
 }
 
-void PrintPolygonTypes(const geom::Polygon2D& polygon) {
+inline void PrintPolygonTypes(const geom::Polygon2D& polygon) {
   if (polygon.Size() < 3)
     return;
   geom::Point2D current = polygon.GetAnyPoint().value();

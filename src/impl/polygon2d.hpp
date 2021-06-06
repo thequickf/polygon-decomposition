@@ -18,7 +18,8 @@ class Polygon2D {
     END,
     SPLIT,
     MERGE,
-    REGULAR
+    LEFT_REGULAR,
+    RIGHT_REGULAR
   };
 
   explicit Polygon2D(std::vector<Point2D> points) {
@@ -75,11 +76,7 @@ class Polygon2D {
     const bool end_kind = YFirstPoint2DComparator()(point, prev) &&
                           YFirstPoint2DComparator()(point, next);
     if (start_kind || end_kind) {
-      const geom::Vector2D v = {point, prev};
-      const geom::Vector2D u = {point, next};
-      const geom::Vector3D w =
-          geom::cross_product(geom::convert3D(v), geom::convert3D(u));
-      if (w.z < 0)
+      if (MoreThenPiAngle2D({point, prev}, {point, next}))
         if (start_kind)
           return SPLIT;
         else
@@ -91,7 +88,9 @@ class Polygon2D {
           return END;
     }
     else {
-      return REGULAR;
+      if (YFirstPoint2DComparator()(point, next))
+        return LEFT_REGULAR;
+      return RIGHT_REGULAR;
     }
   }
 
@@ -131,7 +130,7 @@ class Polygon2D {
   std::set<Point2D> points_;
 };
 
-std::vector<Point2D> AsVector(const Polygon2D& polygon) {
+inline std::vector<Point2D> AsVector(const Polygon2D& polygon) {
   if (polygon.Size() == 0)
     return {};
   

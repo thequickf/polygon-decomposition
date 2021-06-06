@@ -1,33 +1,16 @@
-#ifndef TEST_UTILS_DECOMPOSITION_UTILS_HPP
-#define TEST_UTILS_DECOMPOSITION_UTILS_HPP
+#ifndef TEST_UTILS_DECOMPOSITION_UTILS_H
+#define TEST_UTILS_DECOMPOSITION_UTILS_H
 
 #include <gtest/gtest.h>
 
 #include <impl/geom_utils.hpp>
 
-#include <algorithm>
 #include <vector>
 
 namespace decomposition_tests {
 
 bool PolygonVectorEqual(const std::vector<geom::Point2D>& lhpv,
-                        const std::vector<geom::Point2D>& rhpv) {
-  if (lhpv.size() != rhpv.size())
-    return false;
-  if (lhpv.size() == 0 && rhpv.size() == 0)
-    return true;
-  auto j_it = std::find(rhpv.begin(), rhpv.end(), lhpv.front());
-  if (j_it == rhpv.end())
-    return false;
-  
-  for (size_t i = 0, j = j_it - rhpv.begin();
-       i < lhpv.size();
-       i++, j = (j + 1) % rhpv.size()) {
-    if (lhpv[i] != rhpv[j])
-      return false;
-  }
-  return true;
-}
+                        const std::vector<geom::Point2D>& rhpv);
 
 struct SimpleDecompositionCase {
   const std::vector<geom::Point2D> polygon_v;
@@ -42,11 +25,20 @@ struct SimpleDecompositionCase {
 };
 
 
+const std::vector<geom::Point2D> test_polygons[] = {
+  {
+    {0, 0.5}, {-2.1, 2.9}, {-2.8, -4.1}, {-2.2, -4.9}, {6.3, 0.9}
+  },
+  {
+    {0, 1}, {5, 0}, {6, 1}, {8, 0}, {7, 3},
+    {11, 2}, {12, 4}, {10, 6}, {9, 8}, {7, 7},
+    {6, 8}, {2, 7}, {4, 5}, {3, 3}, {1, 4}
+  }
+};
+
 const SimpleDecompositionCase simple_decomposition_cases[] = {
   {
-    {
-      {0, 0.5}, {-2.1, 2.9}, {-2.8, -4.1}, {-2.2, -4.9}, {6.3, 0.9}
-    },
+    test_polygons[0],
     {
       { {0, 0.5}, {-2.2, -4.9} }
     },
@@ -56,11 +48,7 @@ const SimpleDecompositionCase simple_decomposition_cases[] = {
     }
   },
   {
-    {
-      {0, 1}, {5, 0}, {6, 1}, {8, 0}, {7, 3},
-      {11, 2}, {12, 4}, {10, 6}, {9, 8}, {7, 7},
-      {6, 8}, {2, 7}, {4, 5}, {3, 3}, {1, 4}
-    },
+    test_polygons[1],
     {
       { {5, 0}, {3, 3} },
       { {6, 1}, {3, 3} },
@@ -83,20 +71,10 @@ const SimpleDecompositionCase simple_decomposition_cases[] = {
   }
 };
 
-
 class SimpleDecomposition :
     public testing::TestWithParam<SimpleDecompositionCase> {
  public:
-  void TearDown() override {
-    EXPECT_EQ(answer_.size(), GetExpectedResultSize());
-    for (const std::vector<geom::Point2D>& polygon_i : GetExpectedResult()) {
-      bool found = false;
-      for (const std::vector<geom::Point2D>& polygon_j : answer_)
-        if (PolygonVectorEqual(polygon_i, polygon_j))
-          found = true;
-      EXPECT_TRUE(found);
-    }
-  }
+  void TearDown() override;
 
  protected:
   std::vector<geom::Point2D> GetInitialPolygonVector() const {
@@ -118,10 +96,6 @@ class SimpleDecomposition :
   std::vector<std::vector<geom::Point2D> > answer_;
 };
 
-INSTANTIATE_TEST_SUITE_P(Decomposition,
-                         SimpleDecomposition,
-                         testing::ValuesIn(simple_decomposition_cases));
-
 }  // decomposition_tests
 
-#endif  // TEST_UTILS_DECOMPOSITION_UTILS_HPP
+#endif  // TEST_UTILS_DECOMPOSITION_UTILS_H
