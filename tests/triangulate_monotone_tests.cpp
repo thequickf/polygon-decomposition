@@ -1,8 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <impl/polygon2d.hpp>
-#include <impl/triangulate_monotone.hpp>
-#include <impl/triangulate.hpp>
+#include <polygon2d.h>
+#include <triangulate_monotone.h>
 #include <test_utils/triangulate_utils.h>
 
 namespace decomposition_tests {

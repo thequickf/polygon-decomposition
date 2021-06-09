@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.10.0)
 
 set(CMAKE_CXX_STANDARD 17)
-project(decomposition)
+project(triangulation)
 
-option(BUILD_TESTS "Build decomposition tests." ON)
+option(BUILD_TESTS "Build triangulation tests." OFF)
 
-ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(triangulation)
 
 if(BUILD_TESTS)
   enable_testing()
