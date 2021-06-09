@@ -1,22 +1,22 @@
-#ifndef IMPL_TRIANGULATE_MONOTONE_HPP
-#define IMPL_TRIANGULATE_MONOTONE_HPP
+#include <triangulate_monotone.h>
 
-#include <impl/dcel_polygon2d.hpp>
-#include <impl/geom_utils.hpp>
-#include <impl/polygon2d.hpp>
+#include <dcel_polygon2d.h>
+#include <geom_utils.h>
 
+#include <algorithm>
 #include <stack>
+#include <vector>
 
 namespace geom {
 
 namespace {
 
-inline bool IsAdjacent(const Polygon2D& polygon,
+bool IsAdjacent(const Polygon2D& polygon,
     const Point2D& a, const Point2D& b) {
   return polygon.Prev(a) == b || polygon.Next(a) == b;
 }
 
-inline bool IsValidDiagonal(const Polygon2D& polygon,
+bool IsValidDiagonal(const Polygon2D& polygon,
     const Point2D& current, const Point2D& last, const Point2D& stk_peek) {
   Vector2D v = {current, last};
   Vector2D u = {current, stk_peek};
@@ -27,7 +27,7 @@ inline bool IsValidDiagonal(const Polygon2D& polygon,
 
 }  // namespace
 
-inline std::list<Polygon2D> TriangulateYMonotone(const Polygon2D& polygon) {
+std::list<Polygon2D> TriangulateYMonotone(const Polygon2D& polygon) {
   if (polygon.Size() < 4)
     return {polygon};
 
@@ -70,5 +70,3 @@ inline std::list<Polygon2D> TriangulateYMonotone(const Polygon2D& polygon) {
 }
 
 }  // geom
-
-#endif  // IMPL_TRIANGULATE_MONOTONE_HPP

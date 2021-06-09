@@ -3,8 +3,8 @@
 
 #include <gtest/gtest.h>
 
-#include <impl/geom_utils.hpp>
-#include <impl/polygon2d.hpp>
+#include <geom_utils.h>
+#include <polygon2d.h>
 
 #include <list>
 

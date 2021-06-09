@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
-#include <impl/dcel_polygon2d.hpp>
-#include <impl/geom_utils.hpp>
-#include <impl/make_monotone.hpp>
-#include <impl/polygon2d.hpp>
+#include <dcel_polygon2d.h>
+#include <geom_utils.h>
+#include <decompose_to_monotones.h>
+#include <polygon2d.h>
 #include <test_utils/decomposition_utils.h>
 
 #include <list>

@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include <impl/geom_utils.hpp>
+#include <geom_utils.h>
 
 #include <vector>
 

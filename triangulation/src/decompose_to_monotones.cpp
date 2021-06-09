@@ -1,25 +1,23 @@
-#ifndef IMPL_MAKE_MONOTONE_HPP
-#define IMPL_MAKE_MONOTONE_HPP
+#include <decompose_to_monotones.h>
 
-#include <impl/dcel_polygon2d.hpp>
-#include <impl/geom_utils.hpp>
-#include <impl/polygon2d.hpp>
+#include <dcel_polygon2d.h>
 
 #include <algorithm>
 #include <cassert>
+#include <set>
 
 namespace geom {
 
 namespace {
 
-// assuming that second point of segment and given point are more or
-// equal by YFirstPoint2DComparator then first point of segment
-inline bool IsLeftToPoint(const Segment2D& segment, const Point2D& point) {
+// assuming that second point of segment and given point are more
+// by YFirstPoint2DComparator then first point of segment
+bool IsLeftToPoint(const Segment2D& segment, const Point2D& point) {
   return MoreThenPiAngle2D({segment.a, point}, {segment.a, segment.b});
 }
 
-inline std::optional<Segment2D> FindFirstLeftEdgeToPoint(
-    const std::set<Segment2D> left_edges, const Point2D& point) {
+std::optional<Segment2D> FindFirstLeftEdgeToPoint(
+    const std::set<Segment2D>& left_edges, const Point2D& point) {
   auto it = left_edges.upper_bound({point, point});
   if (it != left_edges.end() && IsLeftToPoint(*it, point))
     return *it;
@@ -32,7 +30,7 @@ inline std::optional<Segment2D> FindFirstLeftEdgeToPoint(
 
 }  // namespace
 
-inline std::list<Polygon2D> DecomposeToYMonotones(
+std::list<Polygon2D> DecomposeToYMonotones(
     const std::vector<Point2D>& polygon_v) {
   Polygon2D polygon(polygon_v);
   DcelPolygon2D dcel_polygon(polygon);
@@ -43,13 +41,11 @@ inline std::list<Polygon2D> DecomposeToYMonotones(
   for (const Point2D& point : points) {
     switch (polygon.GetPointType(point).value()) {
       case Polygon2D::START: {
-        // Handle Start Point
         Segment2D prev_edge = {point, polygon.Prev(point).value()};
         left_edges.insert(prev_edge);
         helper[prev_edge] = point;
       } break;
       case Polygon2D::END: {
-        // Handle End Point
         Segment2D next_edge = {polygon.Next(point).value(), point};
         Point2D next_helper = helper[next_edge];
         if (polygon.GetPointType(next_helper).value() == Polygon2D::MERGE)
@@ -57,7 +53,6 @@ inline std::list<Polygon2D> DecomposeToYMonotones(
         left_edges.erase(next_edge);
       } break;
       case Polygon2D::SPLIT: {
-        // Handle Split Point
         Segment2D prev_edge = {point, polygon.Prev(point).value()};
         std::optional<Segment2D> left_edge =
             FindFirstLeftEdgeToPoint(left_edges, point);
@@ -69,7 +64,6 @@ inline std::list<Polygon2D> DecomposeToYMonotones(
         helper[left_edge.value()] = point;
       } break;
       case Polygon2D::MERGE: {
-        //  Handle Merge Point
         Segment2D next_edge = {polygon.Next(point).value(), point};
         Point2D next_helper = helper[next_edge];
         if (polygon.GetPointType(next_helper).value() == Polygon2D::MERGE)
@@ -85,7 +79,6 @@ inline std::list<Polygon2D> DecomposeToYMonotones(
         helper[left_edge.value()] = point;
       } break;
       case Polygon2D::LEFT_REGULAR: {
-        // Handle Left Regular Point
         Segment2D next_edge = {polygon.Next(point).value(), point};
         Segment2D prev_edge = {point, polygon.Prev(point).value()};
         if (polygon.GetPointType(helper[next_edge]) == Polygon2D::MERGE)
@@ -95,7 +88,6 @@ inline std::list<Polygon2D> DecomposeToYMonotones(
         helper[prev_edge] = point;
       } break;
       case Polygon2D::RIGHT_REGULAR: {
-        // Handle Right Regular Point
         std::optional<Segment2D> left_edge =
             FindFirstLeftEdgeToPoint(left_edges, point);
         if (!left_edge)
@@ -111,5 +103,3 @@ inline std::list<Polygon2D> DecomposeToYMonotones(
 }
 
 }  // geom
-
-#endif  // IMPL_MAKE_MONOTONE_HPP

@@ -1,7 +1,5 @@
 #include <test_utils/decomposition_utils.h>
 
-#include <impl/geom_utils.hpp>
-
 #include <algorithm>
 #include <vector>
 
