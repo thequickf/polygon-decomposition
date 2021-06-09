@@ -32,7 +32,6 @@ inline std::optional<Segment2D> FindFirstLeftEdgeToPoint(
 
 }  // namespace
 
-// TODO: This function is a mess. Clean it up.
 inline std::list<Polygon2D> DecomposeToYMonotones(
     const std::vector<Point2D>& polygon_v) {
   Polygon2D polygon(polygon_v);

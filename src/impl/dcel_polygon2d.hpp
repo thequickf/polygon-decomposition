@@ -4,8 +4,6 @@
 #include <impl/geom_utils.hpp>
 #include <impl/polygon2d.hpp>
 
-#include <impl/debug_utils.hpp>
-
 #include <cmath>
 #include <map>
 #include <optional>
