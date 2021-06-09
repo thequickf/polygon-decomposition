@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <impl/dcel_polygon2d.hpp>
-#include <impl/decomposition.hpp>
 #include <impl/geom_utils.hpp>
+#include <impl/make_monotone.hpp>
 #include <impl/polygon2d.hpp>
 #include <test_utils/decomposition_utils.h>
 
@@ -10,7 +10,7 @@
 
 namespace decomposition_tests {
 
-class MakeMonotoneDecomposition :
+class MakeMonotoneDecompositionTest :
     public testing::TestWithParam<std::vector<geom::Point2D> > {
  protected:
   bool IsMonotone(const geom::Polygon2D& polygon) {
@@ -18,7 +18,7 @@ class MakeMonotoneDecomposition :
       return true;
     geom::Point2D current = polygon.GetAnyPoint().value();
     for (size_t i = 0; i < polygon.Size();
-        i++, current = polygon.Next(current).value()) {
+         i++, current = polygon.Next(current).value()) {
       geom::Polygon2D::PointType type = polygon.GetPointType(current).value();
       if (type == geom::Polygon2D::SPLIT || type == geom::Polygon2D::MERGE)
         return false;
@@ -27,7 +27,7 @@ class MakeMonotoneDecomposition :
   }
 };
 
-TEST_P(MakeMonotoneDecomposition, DecomposeToYMonotonesTest) {
+TEST_P(MakeMonotoneDecompositionTest, DecomposeToYMonotones) {
   geom::Polygon2D polygon(GetParam());
   std::list<geom::Polygon2D> res_polygons =
     geom::DecomposeToYMonotones(geom::AsVector(polygon));
@@ -42,7 +42,7 @@ TEST_P(MakeMonotoneDecomposition, DecomposeToYMonotonesTest) {
 }
 
 INSTANTIATE_TEST_SUITE_P(Decomposition,
-                         MakeMonotoneDecomposition,
+                         MakeMonotoneDecompositionTest,
                          testing::ValuesIn(test_polygons));
 
 }  // decomposition_tests

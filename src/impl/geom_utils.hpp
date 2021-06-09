@@ -78,7 +78,7 @@ inline Vector3D CrossProduct(const Vector3D& v, const Vector3D& u) {
   return {v.y*u.z - v.z*u.y, v.z*u.x - v.x*u.z,  v.x*u.y - v.y*u.x};
 }
 
-inline double MoreThenPiAngle2D(const Vector2D& v, const Vector2D& u) {
+inline bool MoreThenPiAngle2D(const Vector2D& v, const Vector2D& u) {
   return CrossProduct(Convert3D(v), Convert3D(u)).z < 0;
 }
 
