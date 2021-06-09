@@ -34,37 +34,37 @@ inline std::list<Polygon2D> TriangulateYMonotone(const Polygon2D& polygon) {
   DcelPolygon2D dcel_polygon(polygon);
   std::vector<Point2D> polygon_v = AsVector(polygon);
   std::sort(polygon_v.rbegin(), polygon_v.rend(), YFirstPoint2DComparator());
-  std::stack<Point2D> stk;
-  stk.push(polygon_v[0]);
-  stk.push(polygon_v[1]);
+  std::stack<Point2D> to_process_stk;
+  to_process_stk.push(polygon_v[0]);
+  to_process_stk.push(polygon_v[1]);
   size_t i = 2;
   for (; i < polygon_v.size() - 1; i++) {
-    if (IsAdjacent(polygon, polygon_v[i], stk.top())) {
-      Point2D last = stk.top();
-      stk.pop();
-      while (stk.size() > 0 &&
-             IsValidDiagonal(polygon, polygon_v[i], last, stk.top())) {
-        last = stk.top();
-        stk.pop();
+    if (IsAdjacent(polygon, polygon_v[i], to_process_stk.top())) {
+      Point2D last = to_process_stk.top();
+      to_process_stk.pop();
+      while (to_process_stk.size() > 0 &&
+          IsValidDiagonal(polygon, polygon_v[i], last, to_process_stk.top())) {
+        last = to_process_stk.top();
+        to_process_stk.pop();
         dcel_polygon.InsertEdge({polygon_v[i], last});
       }
-      stk.push(last);
-      stk.push(polygon_v[i]);
+      to_process_stk.push(last);
+      to_process_stk.push(polygon_v[i]);
     } else {
-      while (stk.size() > 0) {
-        if (stk.size() != 1)
-          dcel_polygon.InsertEdge({polygon_v[i], stk.top()});
-        stk.pop();
+      while (to_process_stk.size() > 0) {
+        if (to_process_stk.size() != 1)
+          dcel_polygon.InsertEdge({polygon_v[i], to_process_stk.top()});
+        to_process_stk.pop();
       }
-      stk.push(polygon_v[i - 1]);
-      stk.push(polygon_v[i]);
+      to_process_stk.push(polygon_v[i - 1]);
+      to_process_stk.push(polygon_v[i]);
     }
   }
-  stk.pop();
-  while (stk.size() > 0) {
-    if (stk.size() != 1)
-      dcel_polygon.InsertEdge({polygon_v[i], stk.top()});
-    stk.pop();
+  to_process_stk.pop();
+  while (to_process_stk.size() > 0) {
+    if (to_process_stk.size() != 1)
+      dcel_polygon.InsertEdge({polygon_v[i], to_process_stk.top()});
+    to_process_stk.pop();
   }
   return dcel_polygon.GetPolygons();
 }
