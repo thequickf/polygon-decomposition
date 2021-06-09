@@ -26,7 +26,7 @@ bool PolygonVectorEqual(const std::vector<geom::Point2D>& lhpv,
   return true;
 }
 
-void SimpleDecomposition::TearDown() {
+void SimpleDecompositionTest::TearDown() {
   EXPECT_EQ(answer_.size(), GetExpectedResultSize());
   for (const std::vector<geom::Point2D>& polygon_i : GetExpectedResult()) {
     bool found = false;
@@ -38,7 +38,7 @@ void SimpleDecomposition::TearDown() {
 }
 
 INSTANTIATE_TEST_SUITE_P(GeomUtils,
-                         SimpleDecomposition,
+                         SimpleDecompositionTest,
                          testing::ValuesIn(simple_decomposition_cases));
 
 }  // decomposition_tests

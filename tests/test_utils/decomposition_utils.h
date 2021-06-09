@@ -71,7 +71,7 @@ const SimpleDecompositionCase simple_decomposition_cases[] = {
   }
 };
 
-class SimpleDecomposition :
+class SimpleDecompositionTest :
     public testing::TestWithParam<SimpleDecompositionCase> {
  public:
   void TearDown() override;

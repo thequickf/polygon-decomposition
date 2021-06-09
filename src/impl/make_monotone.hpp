@@ -1,5 +1,5 @@
-#ifndef IMPL_DECOMPOSITION_HPP
-#define IMPL_DECOMPOSITION_HPP
+#ifndef IMPL_MAKE_MONOTONE_HPP
+#define IMPL_MAKE_MONOTONE_HPP
 
 #include <impl/dcel_polygon2d.hpp>
 #include <impl/geom_utils.hpp>
@@ -32,6 +32,7 @@ inline std::optional<Segment2D> FindFirstLeftEdgeToPoint(
 
 }  // namespace
 
+// TODO: This function is a mess. Clean it up.
 inline std::list<Polygon2D> DecomposeToYMonotones(
     const std::vector<Point2D>& polygon_v) {
   Polygon2D polygon(polygon_v);
@@ -107,10 +108,9 @@ inline std::list<Polygon2D> DecomposeToYMonotones(
       } break;
     }
   }
-
   return dcel_polygon.GetPolygons();
 }
 
 }  // geom
 
-#endif  // IMPL_DECOMPOSITION_HPP
+#endif  // IMPL_MAKE_MONOTONE_HPP
