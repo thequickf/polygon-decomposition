@@ -26,6 +26,8 @@ std::optional<Triangle2D> AsTriangle(const Polygon2D& polygon) {
 }  // namespace
 
 std::vector<Triangle2D> Triangulate(const std::vector<Point2D>& polygon_v) {
+  if (polygon_v.size() < 3)
+    return {};
   std::list<Polygon2D> y_monotones = DecomposeToYMonotones(polygon_v);
   std::vector<Triangle2D> triangles;
   for (const Polygon2D& y_monotone : y_monotones)
