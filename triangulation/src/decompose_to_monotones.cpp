@@ -10,19 +10,28 @@ namespace geom {
 
 namespace {
 
-// assuming that second point of segment and given point are more
-// by YFirstPoint2DComparator then first point of segment
-bool IsLeftToPoint(const Segment2D& segment, const Point2D& point) {
-  return MoreThenPiAngle2D({segment.a, point}, {segment.a, segment.b});
-}
+static double sweep_line_y;
+
+struct LeftEdgesComparator {
+  double XAtSweepLine(const Segment2D& segment) const {
+    Vector2D v = {segment.a, segment.b};
+    if (v.y == 0)
+      return segment.a.x;
+    double k = (sweep_line_y - segment.a.y) / (v.y);
+    return segment.a.x + v.x * k;
+  }
+
+  bool operator()(const Segment2D& lhs, const Segment2D& rhs) const {
+    return XAtSweepLine(lhs) < XAtSweepLine(rhs);
+  }
+};
 
 std::optional<Segment2D> FindFirstLeftEdgeToPoint(
-    const std::set<Segment2D>& left_edges, const Point2D& point) {
+    const std::set<Segment2D, LeftEdgesComparator>& left_edges,
+    const Point2D& point) {
   auto it = left_edges.upper_bound({point, point});
-  if (it != left_edges.end() && IsLeftToPoint(*it, point))
-    return *it;
   it--;
-  if (it != left_edges.end() && IsLeftToPoint(*it, point))
+  if (it != left_edges.end())
     return *it;
   assert(false);
   return {};
@@ -36,9 +45,10 @@ std::list<Polygon2D> DecomposeToYMonotones(
   DcelPolygon2D dcel_polygon(polygon);
   std::vector<Point2D> points(polygon_v);
   std::sort(points.rbegin(), points.rend(), YFirstPoint2DComparator());
-  std::set<Segment2D> left_edges;
+  std::set<Segment2D, LeftEdgesComparator> left_edges;
   std::map<Segment2D, Point2D> helper;
   for (const Point2D& point : points) {
+    sweep_line_y = point.y;
     switch (polygon.GetPointType(point).value()) {
       case Polygon2D::START: {
         Segment2D prev_edge = {point, polygon.Prev(point).value()};
