@@ -25,6 +25,11 @@ std::optional<Triangle2D> AsTriangle(const Polygon2D& polygon) {
 
 }  // namespace
 
+// Algorithm is based on monotone triangulation
+// https://neerc.ifmo.ru/wiki/index.php?title=Триангуляция_полигонов_(ушная_%2B_монотонная)
+// The main idea:
+//   1. decomosing given polygon to y-monotone polygons (O(NlogN))
+//   2. greedily triangulating each y-monotone polygon (O(N))
 std::vector<Triangle2D> Triangulate(const std::vector<Point2D>& polygon_v) {
   if (polygon_v.size() < 3)
     return {};

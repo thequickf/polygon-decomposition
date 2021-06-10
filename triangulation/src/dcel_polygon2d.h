@@ -8,6 +8,9 @@
 #include <list>
 #include <tuple>
 
+// Doubly-connected edge list polygon representation
+// Used for inserting edges and decomposing polygons
+
 namespace geom {
 
 struct Vertex;
