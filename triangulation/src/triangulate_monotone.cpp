@@ -27,6 +27,7 @@ bool IsValidDiagonal(const Polygon2D& polygon,
 
 }  // namespace
 
+// Moving with y sweep line insering edges as long as we can
 std::list<Polygon2D> TriangulateYMonotone(const Polygon2D& polygon) {
   if (polygon.Size() < 4)
     return {polygon};
