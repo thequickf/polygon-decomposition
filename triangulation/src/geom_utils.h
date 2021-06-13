@@ -7,7 +7,6 @@ namespace geom {
 
 struct Vector2D {
   double x, y;
-  Vector2D() : x(0), y(0) {}
   Vector2D(const Point2D& a, const Point2D& b) : x(b.x - a.x), y(b.y - a.y) {}
   Vector2D(double x, double y) : x(x), y(y) {}
 };
@@ -17,6 +16,7 @@ struct Segment2D {
   Segment2D(const Point2D& a, const Point2D& b) : a(a), b(b) {}
 };
 
+// First by Y, then by X in opposite order
 struct YFirstPoint2DComparator {
   bool operator()(const Point2D& lhp, const Point2D& rhp) const;
 };

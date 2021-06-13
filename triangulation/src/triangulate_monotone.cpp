@@ -17,9 +17,9 @@ bool IsAdjacent(const Polygon2D& polygon,
 }
 
 bool IsValidDiagonal(const Polygon2D& polygon,
-    const Point2D& current, const Point2D& last, const Point2D& stk_peek) {
+    const Point2D& current, const Point2D& last, const Point2D& to_process) {
   Vector2D v = {current, last};
-  Vector2D u = {current, stk_peek};
+  Vector2D u = {current, to_process};
   Polygon2D::PointType type = polygon.GetPointType(current).value();
   bool right = MoreThenPiAngle2D(u, v);
   return (type == Polygon2D::RIGHT_REGULAR) == right;

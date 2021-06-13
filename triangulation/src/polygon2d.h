@@ -21,7 +21,7 @@ class Polygon2D {
     RIGHT_REGULAR
   };
 
-  explicit Polygon2D(std::vector<Point2D> points);
+  explicit Polygon2D(const std::vector<Point2D>& points);
 
   std::optional<Point2D> Prev(const Point2D& point) const;
   std::optional<Point2D> Next(const Point2D& point) const;

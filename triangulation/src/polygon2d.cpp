@@ -2,7 +2,7 @@
 
 namespace geom {
 
-Polygon2D::Polygon2D(std::vector<Point2D> points) {
+Polygon2D::Polygon2D(const std::vector<Point2D>& points) {
   if (points.size() == 0)
     return;
   
