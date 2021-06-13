@@ -9,6 +9,10 @@
 
 namespace geom {
 
+// returns std::list to avoid redundant Polygon2D copying
+// since Polygon2D construction is extremely costly
+// and it's hard to precalculate number of result y-monotones
+// since DcelPolygon2D stores redundant faces
 std::list<Polygon2D> DecomposeToYMonotones(
     const std::vector<Point2D>& polygon_v);
 

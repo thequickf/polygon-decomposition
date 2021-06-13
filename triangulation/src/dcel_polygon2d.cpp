@@ -9,8 +9,8 @@ namespace geom {
 HalfEdge::HalfEdge(const Vertex* origin, const Vector2D& v) :
     origin(origin), angle(std::atan2(v.y, v.x)) {}
 
-std::tuple<HalfEdge*, HalfEdge*> Vertex::GetNeighbourHalfEdges(
-    HalfEdge* edge) const {
+std::tuple<const HalfEdge*, const HalfEdge*> Vertex::GetNeighbourHalfEdges(
+    const HalfEdge* edge) const {
   auto right = edges.upper_bound(edge);
   if (right == edges.end())
     right = edges.begin();
@@ -29,17 +29,17 @@ bool operator<(const Vertex& lhv, const Vertex& rhv) {
 
 DcelPolygon2D::DcelPolygon2D(const Polygon2D& polygon2D) {
   std::map<Point2D, const Vertex*> pnt_to_vertex;
-  std::map<Point2D, HalfEdge*> pnt_to_edge_forward;
+  std::map<Point2D, const HalfEdge*> pnt_to_edge_forward;
 
   Point2D current = polygon2D.GetAnyPoint().value();
   for (size_t i = 0; i < polygon2D.Size(); i++) {
-    Point2D next = polygon2D.Next(current).value();
+    const Point2D next = polygon2D.Next(current).value();
 
     const Vertex* vertex = &*vertices_.insert(Vertex(current)).first;
     pnt_to_vertex[current] = vertex;
 
     half_edges_.push_back(HalfEdge(vertex, {current, next}));
-    HalfEdge* edge = &*half_edges_.rbegin();
+    const HalfEdge* edge = &*half_edges_.rbegin();
     vertex->edges.insert(edge);
     pnt_to_edge_forward[current] = edge;
 
@@ -47,10 +47,10 @@ DcelPolygon2D::DcelPolygon2D(const Polygon2D& polygon2D) {
   }
 
   for (size_t i = 0; i < polygon2D.Size(); i++) {
-    Point2D prev = polygon2D.Prev(current).value();
-    Point2D next = polygon2D.Next(current).value();
+    const Point2D prev = polygon2D.Prev(current).value();
+    const Point2D next = polygon2D.Next(current).value();
 
-    HalfEdge* edge = pnt_to_edge_forward[current];
+    const HalfEdge* edge = pnt_to_edge_forward[current];
     edge->prev = pnt_to_edge_forward[prev];
     edge->next = pnt_to_edge_forward[next];
 
@@ -59,14 +59,14 @@ DcelPolygon2D::DcelPolygon2D(const Polygon2D& polygon2D) {
 
   faces_.push_back(Face(pnt_to_edge_forward[current]));
 
-  std::map<Point2D, HalfEdge*> pnt_to_edge_back;
+  std::map<Point2D, const HalfEdge*> pnt_to_edge_back;
   for (size_t i = 0; i < polygon2D.Size(); i++) {
-    Point2D next = polygon2D.Next(current).value();
+    const Point2D next = polygon2D.Next(current).value();
 
     const Vertex* vertex = pnt_to_vertex[next];
 
     half_edges_.push_back(HalfEdge(vertex, {next, current}));
-    HalfEdge* edge = &*half_edges_.rbegin();
+    const HalfEdge* edge = &*half_edges_.rbegin();
     vertex->edges.insert(edge);
 
     pnt_to_edge_forward[current]->twin = edge;
@@ -78,10 +78,10 @@ DcelPolygon2D::DcelPolygon2D(const Polygon2D& polygon2D) {
   }
 
   for (size_t i = 0; i < polygon2D.Size(); i++) {
-    Point2D prev = polygon2D.Prev(current).value();
-    Point2D next = polygon2D.Next(current).value();
+    const Point2D prev = polygon2D.Prev(current).value();
+    const Point2D next = polygon2D.Next(current).value();
 
-    HalfEdge* edge = pnt_to_edge_back[current];
+    const HalfEdge* edge = pnt_to_edge_back[current];
     edge->prev = pnt_to_edge_back[next];
     edge->next = pnt_to_edge_back[prev];
 
@@ -99,17 +99,17 @@ void DcelPolygon2D::InsertEdge(const Segment2D& edge) {
   const Vertex* v = &*v_it;
 
   half_edges_.push_back(HalfEdge(u, {edge.a, edge.b}));
-  HalfEdge* uv_edge = &*half_edges_.rbegin();
+  const HalfEdge* uv_edge = &*half_edges_.rbegin();
   half_edges_.push_back(HalfEdge(v, {edge.b, edge.a}));
-  HalfEdge* vu_edge = &*half_edges_.rbegin();
+  const HalfEdge* vu_edge = &*half_edges_.rbegin();
 
   uv_edge->twin = vu_edge;
   vu_edge->twin = uv_edge;
 
-  HalfEdge* u_left;
-  HalfEdge* u_right;
-  HalfEdge* v_left;
-  HalfEdge* v_right;
+  const HalfEdge* u_left;
+  const HalfEdge* u_right;
+  const HalfEdge* v_left;
+  const HalfEdge* v_right;
   std::tie(u_left, u_right) = u->GetNeighbourHalfEdges(uv_edge);
   std::tie(v_left, v_right) = v->GetNeighbourHalfEdges(vu_edge);
   
@@ -135,11 +135,11 @@ std::list<Polygon2D> DcelPolygon2D::GetPolygons() const {
 
   std::set<const HalfEdge*> visited;
   for (const Face& face : faces_) {
-    HalfEdge* start_edge = face.edge;
+    const HalfEdge* start_edge = face.edge;
     if (visited.count(start_edge))
       continue;
     std::vector<Point2D> polygon_vector;
-    HalfEdge* edge = face.edge;
+    const HalfEdge* edge = face.edge;
     do {
       polygon_vector.push_back(edge->origin->point);
       visited.insert(edge);
