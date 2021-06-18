@@ -5,6 +5,7 @@ set(SOURCES
     src/decompose_to_monotones.cpp
     src/geom_utils.cpp
     src/polygon2d.cpp
+    src/resolve_intersections.cpp
     src/triangulate_monotone.cpp
     src/triangulation.cpp)
 set(PUBLIC_HEADERS

@@ -11,18 +11,17 @@ namespace geom {
 
 namespace {
 
-bool IsAdjacent(const Polygon2D& polygon,
-    const Point2D& a, const Point2D& b) {
-  return polygon.Prev(a) == b || polygon.Next(a) == b;
+bool IsAdjacent(const Polygon2D::Vertex* a, const Polygon2D::Vertex* b) {
+  return a->prev == b || a->next == b;
 }
 
-bool IsValidDiagonal(const Polygon2D& polygon,
-    const Point2D& current, const Point2D& last, const Point2D& to_process) {
-  Vector2D v = {current, last};
-  Vector2D u = {current, to_process};
-  Polygon2D::PointType type = polygon.GetPointType(current).value();
+bool IsValidDiagonal(const Polygon2D::Vertex* current,
+                     const Polygon2D::Vertex* last,
+                     const Polygon2D::Vertex* to_process) {
+  Vector2D v = {current->point, last->point};
+  Vector2D u = {current->point, to_process->point};
   bool right = MoreThenPiAngle2D(u, v);
-  return (type == Polygon2D::RIGHT_REGULAR) == right;
+  return (current->type == Polygon2D::RIGHT_REGULAR) == right;
 }
 
 }  // namespace
@@ -33,38 +32,42 @@ std::list<Polygon2D> TriangulateYMonotone(const Polygon2D& polygon) {
     return {polygon};
 
   DcelPolygon2D dcel_polygon(polygon);
-  std::vector<Point2D> polygon_v = AsVector(polygon);
-  std::sort(polygon_v.rbegin(), polygon_v.rend(), YFirstPoint2DComparator());
-  std::stack<Point2D> to_process_stk;
-  to_process_stk.push(polygon_v[0]);
-  to_process_stk.push(polygon_v[1]);
+  std::vector<const Polygon2D::Vertex*> vertices = AsVertexVector(polygon);
+  std::sort(vertices.rbegin(), vertices.rend(), YFirstVertexComparator());
+  std::stack<const Polygon2D::Vertex*> to_process_stk;
+  to_process_stk.push(vertices[0]);
+  to_process_stk.push(vertices[1]);
   size_t i = 2;
-  for (; i < polygon_v.size() - 1; i++) {
-    if (IsAdjacent(polygon, polygon_v[i], to_process_stk.top())) {
-      Point2D last = to_process_stk.top();
+  for (; i < vertices.size() - 1; i++) {
+    if (IsAdjacent(vertices[i], to_process_stk.top())) {
+      const Polygon2D::Vertex* last = to_process_stk.top();
       to_process_stk.pop();
       while (to_process_stk.size() > 0 &&
-          IsValidDiagonal(polygon, polygon_v[i], last, to_process_stk.top())) {
+          IsValidDiagonal(vertices[i], last, to_process_stk.top())) {
         last = to_process_stk.top();
         to_process_stk.pop();
-        dcel_polygon.InsertEdge({polygon_v[i], last});
+        dcel_polygon.InsertEdge({vertices[i]->point, last->point});
       }
       to_process_stk.push(last);
-      to_process_stk.push(polygon_v[i]);
+      to_process_stk.push(vertices[i]);
     } else {
       while (to_process_stk.size() > 0) {
-        if (to_process_stk.size() != 1)
-          dcel_polygon.InsertEdge({polygon_v[i], to_process_stk.top()});
+        if (to_process_stk.size() != 1) {
+          dcel_polygon.InsertEdge(
+              {vertices[i]->point, to_process_stk.top()->point});
+        }
         to_process_stk.pop();
       }
-      to_process_stk.push(polygon_v[i - 1]);
-      to_process_stk.push(polygon_v[i]);
+      to_process_stk.push(vertices[i - 1]);
+      to_process_stk.push(vertices[i]);
     }
   }
   to_process_stk.pop();
   while (to_process_stk.size() > 0) {
-    if (to_process_stk.size() != 1)
-      dcel_polygon.InsertEdge({polygon_v[i], to_process_stk.top()});
+    if (to_process_stk.size() != 1) {
+      dcel_polygon.InsertEdge(
+          {vertices[i]->point, to_process_stk.top()->point});
+    }
     to_process_stk.pop();
   }
   return dcel_polygon.GetPolygons();

@@ -16,11 +16,10 @@ class MakeMonotoneDecompositionTest :
   bool IsMonotone(const geom::Polygon2D& polygon) {
     if (polygon.Size() < 3)
       return true;
-    geom::Point2D current = polygon.GetAnyPoint().value();
-    for (size_t i = 0; i < polygon.Size();
-         i++, current = polygon.Next(current).value()) {
-      geom::Polygon2D::PointType type = polygon.GetPointType(current).value();
-      if (type == geom::Polygon2D::SPLIT || type == geom::Polygon2D::MERGE)
+    const geom::Polygon2D::Vertex* current = polygon.GetAnyVertex();
+    for (size_t i = 0; i < polygon.Size(); i++, current = current->next) {
+      if (current->type == geom::Polygon2D::SPLIT ||
+          current->type == geom::Polygon2D::MERGE)
         return false;
     }
     return true;

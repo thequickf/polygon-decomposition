@@ -3,6 +3,8 @@
 
 #include <triangulation_base_geometry.h>
 
+#include <optional>
+
 namespace geom {
 
 struct Vector2D {
@@ -30,6 +32,23 @@ bool operator==(const Point2D& lhp, const Point2D& rhp);
 bool MoreThenPiAngle2D(const Vector2D& v, const Vector2D& u);
 
 bool operator<(const Segment2D& lhs, const Segment2D& rhs);
+
+bool DoubleEqual(double lhd, double rhd);
+bool DoubleLessOrEqual(double lhd, double rhd);
+bool DoubleEqual(const geom::Point2D& lhp, const geom::Point2D& rhp);
+bool DoubleEqual(const geom::Segment2D& lhs, const geom::Segment2D& rhs);
+
+std::optional<Point2D> IntersectionPoint(const Segment2D& a,
+                                         const Segment2D& b);
+
+struct SegmentOnSweepLineComparator {
+  static double sweep_line_y;
+
+  double AnyXAtSweepLine(const Segment2D& segment) const;
+  bool operator()(const Segment2D& lhs, const Segment2D& rhs) const;
+};
+
+bool IsIntersectionOnVertex(const Segment2D& a, const Segment2D& b);
 
 }  // geom
 

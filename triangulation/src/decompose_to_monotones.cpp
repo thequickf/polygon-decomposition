@@ -4,30 +4,15 @@
 
 #include <algorithm>
 #include <cassert>
+#include <map>
 #include <set>
 
 namespace geom {
 
 namespace {
 
-static double sweep_line_y;
-
-struct LeftEdgesComparator {
-  double AnyXAtSweepLine(const Segment2D& segment) const {
-    const Vector2D v = {segment.a, segment.b};
-    if (v.y == 0)
-      return segment.a.x;
-    double k = (sweep_line_y - segment.a.y) / (v.y);
-    return segment.a.x + v.x * k;
-  }
-
-  bool operator()(const Segment2D& lhs, const Segment2D& rhs) const {
-    return AnyXAtSweepLine(lhs) < AnyXAtSweepLine(rhs);
-  }
-};
-
 std::optional<Segment2D> FindFirstLeftEdgeToPoint(
-    const std::set<Segment2D, LeftEdgesComparator>& left_edges,
+    const std::set<Segment2D, SegmentOnSweepLineComparator>& left_edges,
     const Point2D& point) {
   auto it = left_edges.upper_bound({point, point});
   it--;
@@ -46,74 +31,80 @@ std::list<Polygon2D> DecomposeToYMonotones(
     const std::vector<Point2D>& polygon_v) {
   const Polygon2D polygon(polygon_v);
   DcelPolygon2D dcel_polygon(polygon);
-  std::vector<Point2D> points(polygon_v);
-  std::sort(points.rbegin(), points.rend(), YFirstPoint2DComparator());
-  std::set<Segment2D, LeftEdgesComparator> left_edges;
-  std::map<Segment2D, Point2D> y_min_points;
-  for (const Point2D& point : points) {
-    sweep_line_y = point.y;
-    switch (polygon.GetPointType(point).value()) {
+  std::vector<const Polygon2D::Vertex*> vertices = AsVertexVector(polygon);
+  std::sort(vertices.rbegin(), vertices.rend(), YFirstVertexComparator());
+  std::set<Segment2D, SegmentOnSweepLineComparator> left_edges;
+  std::map<Segment2D, const Polygon2D::Vertex*> y_min_vertices;
+  for (const Polygon2D::Vertex* vertex : vertices) {
+    SegmentOnSweepLineComparator::sweep_line_y = vertex->point.y;
+    switch (vertex->type) {
       case Polygon2D::START: {
-        const Segment2D prev_edge = {point, polygon.Prev(point).value()};
+        const Segment2D prev_edge = {vertex->point, vertex->prev->point};
         left_edges.insert(prev_edge);
-        y_min_points[prev_edge] = point;
+        y_min_vertices[prev_edge] = vertex;
         break;
       }
       case Polygon2D::END: {
-        const Segment2D next_edge = {polygon.Next(point).value(), point};
-        const Point2D next_y_min_point = y_min_points[next_edge];
-        if (polygon.GetPointType(next_y_min_point).value() == Polygon2D::MERGE)
-          dcel_polygon.InsertEdge({point, next_y_min_point});
+        const Segment2D next_edge = {vertex->next->point, vertex->point};
+        const Polygon2D::Vertex* next_y_min_vertex = y_min_vertices[next_edge];
+        if (next_y_min_vertex->type == Polygon2D::MERGE)
+          dcel_polygon.InsertEdge({vertex->point, next_y_min_vertex->point});
         left_edges.erase(next_edge);
         break;
       }
       case Polygon2D::SPLIT: {
-        const Segment2D prev_edge = {point, polygon.Prev(point).value()};
+        const Segment2D prev_edge = {vertex->point, vertex->prev->point};
         const std::optional<Segment2D> left_edge =
-            FindFirstLeftEdgeToPoint(left_edges, point);
+            FindFirstLeftEdgeToPoint(left_edges, vertex->point);
         left_edges.insert(prev_edge);
-        y_min_points[prev_edge] = point;
+        y_min_vertices[prev_edge] = vertex;
         if (!left_edge)
           break;
-        dcel_polygon.InsertEdge({point, y_min_points[left_edge.value()]});
-        y_min_points[left_edge.value()] = point;
+        const Polygon2D::Vertex* left_edge_y_min_vertex =
+            y_min_vertices[left_edge.value()];
+        dcel_polygon.InsertEdge({vertex->point, left_edge_y_min_vertex->point});
+        y_min_vertices[left_edge.value()] = vertex;
         break;
       }
       case Polygon2D::MERGE: {
-        const Segment2D next_edge = {polygon.Next(point).value(), point};
-        const Point2D next_y_min_point = y_min_points[next_edge];
-        if (polygon.GetPointType(next_y_min_point).value() == Polygon2D::MERGE)
-          dcel_polygon.InsertEdge({point, next_y_min_point});
+        const Segment2D next_edge = {vertex->next->point, vertex->point};
+        const Polygon2D::Vertex* next_y_min_vertex = y_min_vertices[next_edge];
+        if (next_y_min_vertex->type == Polygon2D::MERGE)
+          dcel_polygon.InsertEdge({vertex->point, next_y_min_vertex->point});
         left_edges.erase(next_edge);
         const std::optional<Segment2D> left_edge =
-            FindFirstLeftEdgeToPoint(left_edges, point);
+            FindFirstLeftEdgeToPoint(left_edges, vertex->point);
         if (!left_edge)
           break;
-        const Point2D left_edge_y_min_point = y_min_points[left_edge.value()];
-        if (polygon.GetPointType(left_edge_y_min_point).value() == Polygon2D::MERGE)
-          dcel_polygon.InsertEdge({point, left_edge_y_min_point});
-        y_min_points[left_edge.value()] = point;
+        const Polygon2D::Vertex* left_edge_y_min_vertex =
+            y_min_vertices[left_edge.value()];
+        if (left_edge_y_min_vertex->type == Polygon2D::MERGE)
+          dcel_polygon.InsertEdge(
+              {vertex->point, left_edge_y_min_vertex->point});
+        y_min_vertices[left_edge.value()] = vertex;
         break;
       }
       case Polygon2D::LEFT_REGULAR: {
-        const Segment2D next_edge = {polygon.Next(point).value(), point};
-        const Segment2D prev_edge = {point, polygon.Prev(point).value()};
-        if (polygon.GetPointType(y_min_points[next_edge]) == Polygon2D::MERGE)
-          dcel_polygon.InsertEdge({point, y_min_points[next_edge]});
+        const Segment2D next_edge = {vertex->next->point, vertex->point};
+        const Segment2D prev_edge = {vertex->point, vertex->prev->point};
+        if (y_min_vertices[next_edge]->type == Polygon2D::MERGE)
+          dcel_polygon.InsertEdge(
+              {vertex->point, y_min_vertices[next_edge]->point});
         left_edges.erase(next_edge);
         left_edges.insert(prev_edge);
-        y_min_points[prev_edge] = point;
+        y_min_vertices[prev_edge] = vertex;
         break;
       }
       case Polygon2D::RIGHT_REGULAR: {
         const std::optional<Segment2D> left_edge =
-            FindFirstLeftEdgeToPoint(left_edges, point);
+            FindFirstLeftEdgeToPoint(left_edges, vertex->point);
         if (!left_edge)
           break;
-        const Point2D y_min_point = y_min_points[left_edge.value()];
-        if (polygon.GetPointType(y_min_point).value() == Polygon2D::MERGE)
-          dcel_polygon.InsertEdge({point, y_min_point});
-        y_min_points[left_edge.value()] = point;
+        const Polygon2D::Vertex* y_min_vertex =
+            y_min_vertices[left_edge.value()];
+        if (y_min_vertex->type == Polygon2D::MERGE)
+          dcel_polygon.InsertEdge({vertex->point, y_min_vertex->point});
+        y_min_vertices[left_edge.value()] = vertex;
         break;
       }
     }
