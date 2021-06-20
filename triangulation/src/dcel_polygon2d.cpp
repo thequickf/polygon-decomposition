@@ -16,10 +16,11 @@ bool IsPointLeftToSegment(const Segment2D& segment, const Point2D& point) {
 
 }  // namespace
 
-HalfEdge::HalfEdge(const Vertex* origin, const Vector2D& v) :
+DcelPolygon2D::HalfEdge::HalfEdge(const Vertex* origin, const Vector2D& v) :
     origin(origin), angle(std::atan2(v.y, v.x)) {}
 
-std::tuple<const HalfEdge*, const HalfEdge*> Vertex::GetNeighbourHalfEdges(
+std::tuple<const DcelPolygon2D::HalfEdge*, const DcelPolygon2D::HalfEdge*>
+    DcelPolygon2D::Vertex::GetNeighbourHalfEdges(
     const HalfEdge* edge) const {
   auto right = edges.upper_bound(edge);
   if (right == edges.end())
@@ -33,15 +34,18 @@ std::tuple<const HalfEdge*, const HalfEdge*> Vertex::GetNeighbourHalfEdges(
   return std::make_tuple(*left, *right);
 }
 
-bool operator<(const Vertex& lhv, const Vertex& rhv) {
+bool operator<(const DcelPolygon2D::Vertex& lhv,
+               const DcelPolygon2D::Vertex& rhv) {
   return lhv.point < rhv.point;
 }
 
-bool operator==(const Face& lhf, const Face& rhf) {
+bool operator==(const DcelPolygon2D::Face& lhf,
+                const DcelPolygon2D::Face& rhf) {
   return lhf.edge == rhf.edge;
 }
 
-bool operator!=(const Face& lhf, const Face& rhf) {
+bool operator!=(const DcelPolygon2D::Face& lhf,
+                const DcelPolygon2D::Face& rhf) {
   return !(lhf == rhf);
 }
 
@@ -299,7 +303,7 @@ std::list<Polygon2D> DcelPolygon2D::GetPolygons() const {
   return res;
 }
 
-std::optional<const HalfEdge*> DcelPolygon2D::GetHalfEdge(
+std::optional<const DcelPolygon2D::HalfEdge*> DcelPolygon2D::GetHalfEdge(
     const Vertex* a, const Vertex* b) const {
   const HalfEdge half_edge_for_search = {a, {a->point, b->point}};
   const auto half_edge_it = a->edges.lower_bound(&half_edge_for_search);

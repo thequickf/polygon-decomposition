@@ -4,7 +4,6 @@
 #include <segments_on_y_sweep_line.h>
 
 #include <algorithm>
-#include <cassert>
 #include <unordered_map>
 #include <set>
 

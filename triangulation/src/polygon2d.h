@@ -9,6 +9,8 @@
 
 namespace geom {
 
+// Simple polygon representation
+
 class Polygon2D {
  public:
   enum VertexType {

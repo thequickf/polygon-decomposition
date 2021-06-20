@@ -9,6 +9,8 @@ Polygon2D::Polygon2D(const std::vector<Point2D>& points) {
   vertices_.push_back(Vertex(points[0]));
   Vertex* prev = &vertices_.back();
   for (size_t i = 1; i < points.size(); i++) {
+    if (DoubleEqual(points[i], prev->point))
+      continue;
     vertices_.push_back(Vertex(points[i]));
     Vertex* current = &vertices_.back();
     current->prev = prev;
