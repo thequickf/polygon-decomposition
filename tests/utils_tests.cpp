@@ -5,7 +5,6 @@
 #include <polygon2d.h>
 #include <test_utils/decomposition_utils.h>
 
-#include <initializer_list>
 #include <optional>
 
 namespace decomposition_tests {

@@ -15,6 +15,7 @@ struct Vector2D {
 
 struct Segment2D {
   Point2D a, b;
+  Segment2D() {}
   Segment2D(const Point2D& a, const Point2D& b) : a(a), b(b) {}
 };
 
@@ -24,14 +25,13 @@ struct YFirstPoint2DComparator {
 };
 
 bool operator<(const Point2D& lhp, const Point2D& rhp);
-
 bool operator!=(const Point2D& lhp, const Point2D& rhp);
-
 bool operator==(const Point2D& lhp, const Point2D& rhp);
 
 bool MoreThenPiAngle2D(const Vector2D& v, const Vector2D& u);
 
 bool operator<(const Segment2D& lhs, const Segment2D& rhs);
+bool operator==(const Segment2D& lhs, const Segment2D& rhs);
 
 bool DoubleEqual(double lhd, double rhd);
 bool DoubleLessOrEqual(double lhd, double rhd);
@@ -44,12 +44,35 @@ std::optional<Point2D> IntersectionPoint(const Segment2D& a,
 struct SegmentOnSweepLineComparator {
   static double sweep_line_y;
 
-  double AnyXAtSweepLine(const Segment2D& segment) const;
   bool operator()(const Segment2D& lhs, const Segment2D& rhs) const;
+
+ // private:
+  static double AnyXAtSweepLine(const Segment2D& segment);
 };
 
 bool IsIntersectionOnVertex(const Segment2D& a, const Segment2D& b);
 
+std::size_t CombineHash(std::size_t left, std::size_t right);
+
 }  // geom
+
+namespace std {
+
+template<>
+struct hash<geom::Point2D> {
+  std::size_t operator()(const geom::Point2D& point) const noexcept {
+    return geom::CombineHash(hash<double>()(point.x), hash<double>()(point.y));
+  }
+};
+
+template<>
+struct hash<geom::Segment2D> {
+  std::size_t operator()(const geom::Segment2D& segment) const noexcept {
+    return geom::CombineHash(hash<geom::Point2D>()(segment.a),
+                             hash<geom::Point2D>()(segment.b));
+  }
+};
+
+}  // std
 
 #endif  // GEOM_UTILS_H

@@ -1,9 +1,38 @@
 #include <test_utils/decomposition_utils.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <vector>
 
 namespace decomposition_tests {
+
+double DoubleRand(double min, double max) {
+    double rand_n = static_cast<double>(std::rand()) / RAND_MAX;
+    return min + rand_n * (max - min);
+}
+
+bool PolygonEqual(const geom::Polygon2D& lhp,
+                  const geom::Polygon2D& rhp) {
+  if (lhp.Size() != rhp.Size())
+    return false;
+  const geom::Polygon2D::Vertex* lh_vertex = lhp.GetAnyVertex();
+  const geom::Polygon2D::Vertex* rh_vertex = lhp.GetAnyVertex();
+  geom::Segment2D lh_edge = {lh_vertex->point, lh_vertex->next->point};
+  geom::Segment2D rh_edge = {rh_vertex->point, rh_vertex->next->point};
+  for (size_t i = 0; i < lhp.Size(); i++, lh_vertex = lh_vertex->next) {
+    lh_edge = {lh_vertex->point, lh_vertex->next->point};
+    if (geom::DoubleEqual(lh_edge, rh_edge))
+      break;
+  }
+  for (size_t i = 0; i < lhp.Size();
+      i++, lh_vertex = lh_vertex->next, rh_vertex = rh_vertex->next) {
+    lh_edge = {lh_vertex->point, lh_vertex->next->point};
+    rh_edge = {rh_vertex->point, rh_vertex->next->point};
+    if (!geom::DoubleEqual(lh_edge, rh_edge))
+      return false;
+  }
+  return true;
+}
 
 bool PolygonVectorEqual(const std::vector<geom::Point2D>& lhpv,
                         const std::vector<geom::Point2D>& rhpv) {

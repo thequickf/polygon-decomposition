@@ -1,7 +1,6 @@
 #include <dcel_polygon2d.h>
 
 #include <cmath>
-#include <map>
 #include <unordered_map>
 #include <utility>
 
@@ -192,8 +191,14 @@ void DcelPolygon2D::ResolveIntersection(const Segment2D& a,
   const HalfEdge* b1b2he = b1b2he_opt.value();
   const HalfEdge* b2b1he = b1b2he->twin;
 
-  const Vertex* intersection =
-      &*vertices_.insert(Vertex(intersection_opt.value())).first;
+  const Point2D intersection_point = intersection_opt.value();
+  auto existing_intersection_vertex_it =
+      vertices_.find(Vertex(intersection_point));
+  const Vertex* intersection;
+  if (existing_intersection_vertex_it != vertices_.end())
+    intersection = &*existing_intersection_vertex_it;
+  else
+    intersection = &*vertices_.insert(Vertex(intersection_point)).first;
 
   half_edges_.push_back(HalfEdge(intersection, {intersection->point, a1_pnt}));
   const HalfEdge* inta1he = &half_edges_.back();

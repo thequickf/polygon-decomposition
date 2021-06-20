@@ -4,10 +4,16 @@
 #include <gtest/gtest.h>
 
 #include <geom_utils.h>
+#include <polygon2d.h>
 
 #include <vector>
 
 namespace decomposition_tests {
+
+double DoubleRand(double min, double max);
+
+bool PolygonEqual(const geom::Polygon2D& lhp,
+                  const geom::Polygon2D& rhp);
 
 bool PolygonVectorEqual(const std::vector<geom::Point2D>& lhpv,
                         const std::vector<geom::Point2D>& rhpv);

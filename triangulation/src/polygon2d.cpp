@@ -1,7 +1,5 @@
 #include <polygon2d.h>
 
-#include <climits>
-
 namespace geom {
 
 Polygon2D::Polygon2D(const std::vector<Point2D>& points) {

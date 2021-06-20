@@ -1,5 +1,7 @@
 #include <geom_utils.h>
 
+#include <cassert>
+#include <climits>
 #include <cmath>
 #include <tuple>
 
@@ -18,18 +20,25 @@ bool operator==(const Point2D& lhp, const Point2D& rhp) {
 }
 
 bool MoreThenPiAngle2D(const Vector2D& v, const Vector2D& u) {
-  return v.x*u.y - v.y*u.x < 0;
+  const double z = v.x*u.y - v.y*u.x;
+  if (DoubleEqual(z, 0))
+    return false;
+  return z < 0;
 }
 
 bool operator<(const Segment2D& lhs, const Segment2D& rhs) {
   return std::tie(lhs.a, lhs.b) < std::tie(rhs.a, rhs.b);
 }
 
+bool operator==(const Segment2D& lhs, const Segment2D& rhs) {
+  return std::tie(lhs.a, lhs.b) == std::tie(rhs.a, rhs.b);
+}
+
 bool YFirstPoint2DComparator::operator()(const Point2D& lhp,
                                          const Point2D& rhp) const {
   if (DoubleEqual(lhp, rhp))
     return false;
-  if (lhp.y == rhp.y)
+  if (DoubleEqual(lhp.y, rhp.y))
     return lhp.x > rhp.x;
   return lhp.y < rhp.y;
 }
@@ -95,8 +104,7 @@ std::optional<Point2D> IntersectionPoint(const Segment2D& a,
 
 double SegmentOnSweepLineComparator::sweep_line_y = 0;
 
-double SegmentOnSweepLineComparator::AnyXAtSweepLine(
-    const Segment2D& segment) const {
+double SegmentOnSweepLineComparator::AnyXAtSweepLine(const Segment2D& segment) {
   const Vector2D v = {segment.a, segment.b};
   if (v.y == 0)
     return segment.a.x;
@@ -109,14 +117,25 @@ bool SegmentOnSweepLineComparator::operator()(
   if (DoubleEqual(lhs, rhs))
     return false;
   const double lhx = AnyXAtSweepLine(lhs), rhx = AnyXAtSweepLine(rhs);
-  if (DoubleEqual(lhx, rhx))
-    return std::tie(lhs.b, lhs.a) < std::tie(rhs.b, rhs.a);
+  if (DoubleEqual(lhx, rhx)) {
+    const bool left = MoreThenPiAngle2D({lhs.a, lhs.b}, {rhs.a, rhs.b});
+    if (DoubleEqual(lhs.a, rhs.a))
+      return left;
+    if (DoubleEqual(lhs.b, rhs.b))
+      return !left;
+    assert(false);
+    return false;
+  }
   return lhx < rhx;
 }
 
 bool IsIntersectionOnVertex(const Segment2D& a, const Segment2D& b) {
   return DoubleEqual(a.a, b.a) || DoubleEqual(a.a, b.b) ||
          DoubleEqual(a.b, b.a) || DoubleEqual(a.b, b.b);
+}
+
+std::size_t CombineHash(std::size_t left, std::size_t right) {
+  return left ^ (right << 1 | (right >> (CHAR_BIT * sizeof(right) - 1)));
 }
 
 }  // geom
