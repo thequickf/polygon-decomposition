@@ -4,10 +4,16 @@
 #include <gtest/gtest.h>
 
 #include <geom_utils.h>
+#include <polygon2d.h>
 
 #include <vector>
 
 namespace decomposition_tests {
+
+double DoubleRand(double min, double max);
+
+bool PolygonEqual(const geom::Polygon2D& lhp,
+                  const geom::Polygon2D& rhp);
 
 bool PolygonVectorEqual(const std::vector<geom::Point2D>& lhpv,
                         const std::vector<geom::Point2D>& rhpv);
@@ -24,6 +30,10 @@ struct SimpleDecompositionCase {
       polygon_v(polygon_v), new_edges(new_edges), result(result) {}
 };
 
+const std::vector<geom::Point2D> self_intersecting_polygons[] = {
+  { {-1, -1}, {-1, 1}, {1, -1}, {1, 1} },
+  { {-1, -1}, {-2, 0}, {-1, 1}, {1, -1}, {2, 0}, {1, 1} }
+};
 
 const std::vector<geom::Point2D> test_polygons[] = {
   {
@@ -96,6 +106,75 @@ class SimpleDecompositionTest :
 
   std::vector<geom::Segment2D> GetNewEdges() const {
     return GetParam().new_edges;
+  }
+
+  std::vector<std::vector<geom::Point2D> > GetExpectedResult() const {
+    return GetParam().result;
+  }
+
+  size_t GetExpectedResultSize() const {
+    return GetParam().result.size();
+  }
+
+  std::vector<std::vector<geom::Point2D> > answer_;
+};
+
+struct SimpleIntersectionCase {
+  const std::vector<geom::Point2D> polygon_v;
+  const geom::Segment2D first_s, second_s;
+  const std::vector<std::vector<geom::Point2D> > result;
+
+  SimpleIntersectionCase(
+      const std::vector<geom::Point2D>& polygon_v,
+      const geom::Segment2D& first_s, const geom::Segment2D& second_s,
+      const std::vector<std::vector<geom::Point2D> >& result) :
+      polygon_v(polygon_v), first_s(first_s), second_s(second_s), result(result) {}
+};
+
+const SimpleIntersectionCase simple_intersection_cases[] = {
+  {
+    self_intersecting_polygons[0],
+    {{-1, 1}, {1, -1}}, {{-1, -1}, {1, 1}},
+    {{{-1, 1}, {0, 0}, {-1, -1}}, {{1, 1}, {1, -1}, {0, 0}}}
+  },
+  {
+    self_intersecting_polygons[1],
+    {{-1, 1}, {1, -1}}, {{-1, -1}, {1, 1}},
+    {{{-1, 1}, {0, 0}, {-1, -1}, {-2, 0}}, {{1, 1}, {2, 0}, {1, -1}, {0, 0}}}
+  },
+  {
+    self_intersecting_polygons[1],
+    {{1, -1}, {-1, 1}}, {{-1, -1}, {1, 1}},
+    {{{-1, 1}, {0, 0}, {-1, -1}, {-2, 0}}, {{1, 1}, {2, 0}, {1, -1}, {0, 0}}}
+  },
+  {
+    self_intersecting_polygons[1],
+    {{-1, 1}, {1, -1}}, {{1, 1}, {-1, -1}},
+    {{{-1, 1}, {0, 0}, {-1, -1}, {-2, 0}}, {{1, 1}, {2, 0}, {1, -1}, {0, 0}}}
+  },
+  {
+    self_intersecting_polygons[1],
+    {{1, -1}, {-1, 1}}, {{1, 1}, {-1, -1}},
+    {{{-1, 1}, {0, 0}, {-1, -1}, {-2, 0}}, {{1, 1}, {2, 0}, {1, -1}, {0, 0}}}
+  }
+};
+
+class SimpleIntersectionTest :
+    public testing::TestWithParam<SimpleIntersectionCase> {
+ public:
+  void TearDown() override;
+
+ protected:
+  std::vector<geom::Point2D> GetInitialPolygonVector() const {
+    return GetParam().polygon_v;
+  }
+
+  geom::Segment2D GetFirstSegment() const {
+    return GetParam().first_s;
+  }
+
+  geom::Segment2D GetSecondSegment() const {
+    return GetParam().second_s;
   }
 
   std::vector<std::vector<geom::Point2D> > GetExpectedResult() const {

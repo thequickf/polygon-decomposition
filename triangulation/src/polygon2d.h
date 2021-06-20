@@ -3,16 +3,15 @@
 
 #include <geom_utils.h>
 
-#include <map>
-#include <optional>
-#include <set>
+#include <functional>
+#include <list>
 #include <vector>
 
 namespace geom {
 
 class Polygon2D {
  public:
-  enum PointType {
+  enum VertexType {
     START,
     END,
     SPLIT,
@@ -21,26 +20,39 @@ class Polygon2D {
     RIGHT_REGULAR
   };
 
+  struct Vertex {
+    const Point2D point;
+    Vertex* prev;
+    Vertex* next;
+    VertexType type;
+
+    explicit Vertex(const Point2D& point) : point(point) {}
+  };
+
   explicit Polygon2D(const std::vector<Point2D>& points);
 
-  std::optional<Point2D> Prev(const Point2D& point) const;
-  std::optional<Point2D> Next(const Point2D& point) const;
   size_t Size() const;
 
-  std::optional<Point2D> GetAnyPoint() const;
-  std::optional<PointType> GetPointType(const Point2D& point) const;
+  const Vertex* GetAnyVertex() const;
 
  private:
+  static VertexType GetVertexType(const Vertex* vertex);
+  void SetVertexTypes();
+
   void ReverseDirection();
   bool IsClockwise() const;
   void NormalizeDirection();
 
-  std::map<Point2D, Point2D> prev_;
-  std::map<Point2D, Point2D> next_;
-  std::set<Point2D> points_;
+  std::list<Vertex> vertices_;
+};
+
+struct YFirstVertexComparator {
+  bool operator()(const Polygon2D::Vertex* const& lhv,
+                  const Polygon2D::Vertex* const& rhv) const;
 };
 
 std::vector<Point2D> AsVector(const Polygon2D& polygon);
+std::vector<const Polygon2D::Vertex*> AsVertexVector(const Polygon2D& polygon);
 
 }  // geom
 
