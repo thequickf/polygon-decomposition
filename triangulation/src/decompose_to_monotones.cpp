@@ -1,28 +1,14 @@
 #include <decompose_to_monotones.h>
 
 #include <dcel_polygon2d.h>
+#include <segments_on_y_sweep_line.h>
 
 #include <algorithm>
 #include <cassert>
-#include <map>
+#include <unordered_map>
 #include <set>
 
 namespace geom {
-
-namespace {
-
-std::optional<Segment2D> FindFirstLeftEdgeToPoint(
-    const std::set<Segment2D, SegmentOnSweepLineComparator>& left_edges,
-    const Point2D& point) {
-  auto it = left_edges.upper_bound({point, point});
-  it--;
-  if (it != left_edges.end())
-    return *it;
-  assert(false);
-  return {};
-}
-
-}  // namespace
 
 // Decomposing to y-montones is quite complicated
 // (Probably implementation is messy)
@@ -33,14 +19,14 @@ std::list<Polygon2D> DecomposeToYMonotones(
   DcelPolygon2D dcel_polygon(polygon);
   std::vector<const Polygon2D::Vertex*> vertices = AsVertexVector(polygon);
   std::sort(vertices.rbegin(), vertices.rend(), YFirstVertexComparator());
-  std::set<Segment2D, SegmentOnSweepLineComparator> left_edges;
-  std::map<Segment2D, const Polygon2D::Vertex*> y_min_vertices;
+  SegmentsOnYSweepLine left_edges;
+  std::unordered_map<Segment2D, const Polygon2D::Vertex*> y_min_vertices;
   for (const Polygon2D::Vertex* vertex : vertices) {
-    SegmentOnSweepLineComparator::sweep_line_y = vertex->point.y;
+    SegmentsOnYSweepLine::SetY(vertex->point.y);
     switch (vertex->type) {
       case Polygon2D::START: {
         const Segment2D prev_edge = {vertex->point, vertex->prev->point};
-        left_edges.insert(prev_edge);
+        left_edges.Add(prev_edge);
         y_min_vertices[prev_edge] = vertex;
         break;
       }
@@ -49,14 +35,14 @@ std::list<Polygon2D> DecomposeToYMonotones(
         const Polygon2D::Vertex* next_y_min_vertex = y_min_vertices[next_edge];
         if (next_y_min_vertex->type == Polygon2D::MERGE)
           dcel_polygon.InsertEdge({vertex->point, next_y_min_vertex->point});
-        left_edges.erase(next_edge);
+        left_edges.Remove(next_edge);
         break;
       }
       case Polygon2D::SPLIT: {
         const Segment2D prev_edge = {vertex->point, vertex->prev->point};
         const std::optional<Segment2D> left_edge =
-            FindFirstLeftEdgeToPoint(left_edges, vertex->point);
-        left_edges.insert(prev_edge);
+          left_edges.FirstLeft(vertex->point);
+        left_edges.Add(prev_edge);
         y_min_vertices[prev_edge] = vertex;
         if (!left_edge)
           break;
@@ -71,9 +57,9 @@ std::list<Polygon2D> DecomposeToYMonotones(
         const Polygon2D::Vertex* next_y_min_vertex = y_min_vertices[next_edge];
         if (next_y_min_vertex->type == Polygon2D::MERGE)
           dcel_polygon.InsertEdge({vertex->point, next_y_min_vertex->point});
-        left_edges.erase(next_edge);
+        left_edges.Remove(next_edge);
         const std::optional<Segment2D> left_edge =
-            FindFirstLeftEdgeToPoint(left_edges, vertex->point);
+          left_edges.FirstLeft(vertex->point);
         if (!left_edge)
           break;
         const Polygon2D::Vertex* left_edge_y_min_vertex =
@@ -90,14 +76,14 @@ std::list<Polygon2D> DecomposeToYMonotones(
         if (y_min_vertices[next_edge]->type == Polygon2D::MERGE)
           dcel_polygon.InsertEdge(
               {vertex->point, y_min_vertices[next_edge]->point});
-        left_edges.erase(next_edge);
-        left_edges.insert(prev_edge);
+        left_edges.Remove(next_edge);
+        left_edges.Add(prev_edge);
         y_min_vertices[prev_edge] = vertex;
         break;
       }
       case Polygon2D::RIGHT_REGULAR: {
         const std::optional<Segment2D> left_edge =
-            FindFirstLeftEdgeToPoint(left_edges, vertex->point);
+          left_edges.FirstLeft(vertex->point);
         if (!left_edge)
           break;
         const Polygon2D::Vertex* y_min_vertex =

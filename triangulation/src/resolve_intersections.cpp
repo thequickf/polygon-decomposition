@@ -1,14 +1,12 @@
 #include <resolve_intersections.h>
 
 #include <dcel_polygon2d.h>
-
-#include <debug_utils.h>
+#include <segments_on_y_sweep_line.h>
 
 #include <cassert>
 #include <memory>
 #include <optional>
 #include <set>
-#include <unordered_map>
 
 namespace geom {
 
@@ -88,114 +86,74 @@ struct EventComparator {
   }
 };
 
-/*
-struct IntersectingSegments {
-  Segment2D segment_a;
-  Segment2D segment_b;
+class EventManager {
+ public:
+  const Event* Top() const {
+    assert(!events_.empty());
+    return events_.begin()->get();
+  }
 
-  IntersectingSegments() : segment_a({}, {}), segment_b({}, {}) {}
-  IntersectingSegments(const Segment2D& segment_a, const Segment2D& segment_b) :
-      segment_a(segment_a), segment_b(segment_b) {}
+  bool Empty() const {
+    return events_.empty();
+  }
+
+  void Pop() {
+    events_.erase(events_.begin());
+  }
+
+  void AddSegment(const Segment2D& segment) {
+    AddBegin(segment);
+    AddEnd(segment);
+  }
+
+  void RemoveSegment(const Segment2D& segment) {
+    RemoveBegin(segment);
+    RemoveEnd(segment);
+  }
+
+  void AddBegin(const Segment2D& segment) {
+    events_.insert(std::make_unique<const BeginEvent>(segment));
+  }
+
+  void AddEnd(const Segment2D& segment) {
+    events_.insert(std::make_unique<const EndEvent>(segment));
+  }
+
+  void AddIntersection(
+      const Point2D& point, const Point2D& a_end, const Point2D& b_end) {
+    events_.insert(std::make_unique<const IntersectionEvent>(
+        point, a_end, b_end));
+  }
+
+  void RemoveBegin(const Segment2D& segment) {
+    events_.erase(std::make_unique<const BeginEvent>(segment));
+  }
+
+  void RemoveEnd(const Segment2D& segment) {
+    events_.erase(std::make_unique<const EndEvent>(segment));
+  }
+
+ private:
+  std::set<std::unique_ptr<const Event>, EventComparator> events_;
 };
 
-bool operator<(const Event& lhe, const Event& rhe) {
-  if (DoubleEqual(lhe.point, rhe.point)) {
-    if (lhe.type == rhe.type)
-      return YFirstSegmentLess(lhe.segment, rhe.segment);
-    return lhe.type > rhe.type;
-  }
-  return YFirstPoint2DComparator()(lhe.point, rhe.point);
-}
-//*/
-
 }  // namespace
-
-//*
-void PrintEvent(const Event* event) {
-  if (event->type == Event::BEGIN) {
-    auto begin_event = static_cast<const BeginEvent*>(event);
-    std::cerr << "Begin type, ";
-    std::cerr << "Point: ";
-    PrintPoint(begin_event->point);
-    std::cerr << ", Segment: ";
-    PrintSegment2D(begin_event->segment);
-  } else if (event->type == Event::END) {
-    auto end_event = static_cast<const EndEvent*>(event);
-    std::cerr << "End type, ";
-    std::cerr << "Point: ";
-    PrintPoint(end_event->point);
-    std::cerr << ", Segment: ";
-    PrintSegment2D(end_event->segment);
-  } else {
-    auto int_event = static_cast<const IntersectionEvent*>(event);
-    std::cerr << "Intersection type, ";
-    std::cerr << "Point: ";
-    PrintPoint(int_event->point);
-    std::cerr << ", Segment A end: ";
-    PrintPoint(int_event->a_end);
-    std::cerr << ", Segment B end: ";
-    PrintPoint(int_event->b_end);
-  }
-}
-
-void PrintEventL(const Event* event) {
-  PrintEvent(event);
-  PrintL();
-}
-
-void PrintEvents(const std::set<std::unique_ptr<const Event>, EventComparator>& events) {
-  for (const auto& event : events) {
-    PrintEventL(event.get());
-  }
-  PrintL();
-}
-//*/
 
 std::list<Polygon2D> ResolveIntersections(const Polygon2D& polygon) {
   if (polygon.Size() < 4)
     return {polygon};
 
   DcelPolygon2D dcel_polygon(polygon);
-
-  std::set<std::unique_ptr<const Event>, EventComparator> events;
-
-  auto AddSegmentToEvents = [&](const Segment2D& segment) {
-    if (!events.insert(std::make_unique<const BeginEvent>(segment)).second) {
-      std::cerr << "+++++++++++++++ not added begin event" << std::endl;
-      std::cerr << "segment to add: ";
-      PrintSegment2DL(segment);
-      PrintEvents(events);
-    }
-    if (!events.insert(std::make_unique<const EndEvent>(segment)).second) {
-      std::cerr << "+++++++++++++++ not added end event" << std::endl;
-    }
-  };
-
-  auto RemoveSegmentFromEvents = [&](const Segment2D& segment) {
-    // std::cerr << events.size() << std::endl;
-    events.erase(std::make_unique<const BeginEvent>(segment));
-    // std::cerr << events.size() << std::endl;
-    events.erase(std::make_unique<const EndEvent>(segment));
-    // std::cerr << events.size() << std::endl;
-    // PrintL();
-  };
-
-  auto AddIntesectionToEvents = [&](const Point2D& int_point,
-                                    const Point2D& a_end,
-                                    const Point2D& b_end) {
-    events.insert(std::make_unique<const IntersectionEvent>(
-        int_point, a_end, b_end));
-  };
+  EventManager events;
+  SegmentsOnYSweepLine segments;
 
   const Polygon2D::Vertex* current = polygon.GetAnyVertex();
   for (size_t i = 0; i < polygon.Size(); i++, current = current->next) {
     Point2D a = current->point, b = current->next->point;
     if (!YFirstPoint2DComparator()(a, b))
       std::swap(a, b);
-    AddSegmentToEvents({a, b});
+    events.AddSegment({a, b});
   }
-
-  std::set<Segment2D, SegmentOnSweepLineComparator> segments_on_sweep_line;
 
   auto ResolveIntersection = [&](const Segment2D& segment_a,
                                  const Segment2D& segment_b) {
@@ -209,186 +167,74 @@ std::list<Polygon2D> ResolveIntersections(const Polygon2D& polygon) {
 
     dcel_polygon.ResolveIntersection(segment_a, segment_b);
 
-    RemoveSegmentFromEvents(segment_a);
-    RemoveSegmentFromEvents(segment_b);
+    events.RemoveSegment(segment_a);
+    events.RemoveSegment(segment_b);
 
     const Point2D int_point = int_point_opt.value();
     const Segment2D a1int = {segment_a.a, int_point};
     const Segment2D b1int = {segment_b.a, int_point};
 
-    /*
-    std::cerr << "Intersection a:";
-    PrintSegment2D(segment_a);
-    std::cerr << ", b:";
-    PrintSegment2D(segment_b);
-    std::cerr << ", int:";
-    PrintPointL(int_point);
-    //*/
+    events.AddEnd(a1int);
+    events.AddEnd(b1int);
 
-    if (!events.insert(std::make_unique<const EndEvent>(a1int)).second) {
-      std::cerr << "+++++++++++++++ not added end event" << std::endl;
-    }
-    if (!events.insert(std::make_unique<const EndEvent>(b1int)).second) {
-      std::cerr << "+++++++++++++++ not added end event" << std::endl;
-    }
-    // events.insert(std::make_unique<const EndEvent>(a1int));
-    // events.insert(std::make_unique<const EndEvent>(b1int));
+    events.AddIntersection(int_point, segment_a.b, segment_b.b);
 
-    AddIntesectionToEvents(int_point, segment_a.b, segment_b.b);
+    segments.Remove(segment_a);
+    segments.Remove(segment_b);
 
-    // std::cerr << "before remove:"
-    segments_on_sweep_line.erase(segment_a);
-    // std::cerr << "Segment to remove: ";
-    // PrintSegment2DL(segment_a);
-    segments_on_sweep_line.erase(segment_b);
-    // std::cerr << "Segment to remove: ";
-    // PrintSegment2DL(segment_b);
-    segments_on_sweep_line.insert(a1int);
-    segments_on_sweep_line.insert(b1int);
+    segments.Add(a1int);
+    segments.Add(b1int);
 
     return std::optional<Point2D>(int_point);
   };
 
-  auto FirstMoreByXOnSweepLine = [&](const Segment2D& segment) {
-    auto right = segments_on_sweep_line.upper_bound(segment);
-    for (; right != segments_on_sweep_line.end(); right++) {
-      if (!DoubleEqual(SegmentOnSweepLineComparator::AnyXAtSweepLine(segment),
-                       SegmentOnSweepLineComparator::AnyXAtSweepLine(*right)))
-        break;
-    }
-    return right;
-  };
-
-  auto PrevOnSweepLine = [&](
-      std::set<Segment2D, SegmentOnSweepLineComparator>::iterator jt) {
-    if (jt == segments_on_sweep_line.begin())
-      return segments_on_sweep_line.end();
-    if (segments_on_sweep_line.size() == 0)
-      return segments_on_sweep_line.end();
-    return std::prev(jt);
-  };
-
-  auto FirstLessByXOnSweepLine = [&](const Segment2D& segment) {
-    auto left = segments_on_sweep_line.upper_bound(segment);
-    left = PrevOnSweepLine(left);
-    while (left != segments_on_sweep_line.end()) {
-      if (!DoubleEqual(SegmentOnSweepLineComparator::AnyXAtSweepLine(segment),
-                       SegmentOnSweepLineComparator::AnyXAtSweepLine(*left)))
-        break;
-      left = PrevOnSweepLine(left);
-    }
-    return left;
-  };
-
-  while (!events.empty()) {
-    auto current_it = events.begin();
-    const Event* event = current_it->get();
-    // PrintEventL(event);
-    SegmentOnSweepLineComparator::sweep_line_y = event->point.y;
-
-    /*
-    auto PrintSegmentsOnSweepLine = [&]() {
-      std::cerr << "Segments on sweep line: " << std::endl;
-      for (const Segment2D& segment : segments_on_sweep_line) {
-        std::cerr << "{";
-        PrintSegment2D(segment);
-        std::cerr << ", x: ";
-        std::cerr << SegmentOnSweepLineComparator::AnyXAtSweepLine(segment);
-        std::cerr << "}, ";
-      }
-      PrintL();
-      std::cerr << "Y: " << SegmentOnSweepLineComparator::sweep_line_y << std::endl;
-    };
-
-    // PrintSegmentsOnSweepLine();
-
-
-    for (auto seg_it = segments_on_sweep_line.begin(); seg_it != segments_on_sweep_line.end(); seg_it++) {
-      auto next_it = seg_it;
-      next_it++;
-      if (next_it != segments_on_sweep_line.end()) {
-        double current_x = SegmentOnSweepLineComparator::AnyXAtSweepLine(*seg_it),
-               next_x = SegmentOnSweepLineComparator::AnyXAtSweepLine(*next_it);
-        if (!DoubleEqual(current_x, next_x)) {
-          if (current_x > next_x) {
-            PrintSegmentsOnSweepLine();
-            assert(false);
-          }
-        }
-      }
-    }
-
-    auto RemoveSegmentOnSweepLine = [&](const Segment2D& segment) {
-      segments_on_sweep_line.erase(segment);
-    };
-    //*/
+  while (!events.Empty()) {
+    const Event* event = events.Top();
+    SegmentsOnYSweepLine::SetY(event->point.y);
 
     switch (event->type) {
       case Event::BEGIN: {
         const BeginEvent begin_event = *(static_cast<const BeginEvent*>(event));
-        events.erase(current_it);
+        events.Pop();
 
-        auto left = FirstLessByXOnSweepLine(begin_event.segment);
-        auto right = FirstMoreByXOnSweepLine(begin_event.segment);
-        
-        bool left_preset = left != segments_on_sweep_line.end();
-        bool right_preset = right != segments_on_sweep_line.end();
+        std::optional<Segment2D> left = segments.FirstLeft(begin_event.segment);
+        std::optional<Segment2D> right =
+            segments.FirstRight(begin_event.segment);
+
         std::optional<Point2D> int_point;
-        if (left_preset) {
-          // std::cerr << "left: ";
-          // PrintSegment2DL(*left);
+        if (left)
           int_point = ResolveIntersection(begin_event.segment, *left);
-        }
-        if (right_preset && !int_point) {
-          // std::cerr << "right: ";
-          // PrintSegment2DL(*right);
+        if (right && !int_point)
           int_point = ResolveIntersection(begin_event.segment, *right);
-        }
 
-        // begin_event = static_cast<const BeginEvent*>(it->get());
-        if (int_point) {
-          // std::cerr << "Segment added: " << std::endl;
-          // PrintSegment2DL(begin_event->segment);
-          events.insert(std::make_unique<const BeginEvent>(
-              Segment2D(begin_event.point, int_point.value())));
-        } else {
-          segments_on_sweep_line.insert(begin_event.segment);
-        }
+        if (int_point)
+          events.AddBegin({begin_event.point, int_point.value()});
+        else
+          segments.Add(begin_event.segment);
 
         break;
       }
       case Event::END: {
         const EndEvent end_event = *(static_cast<const EndEvent*>(event));
-        events.erase(current_it);
+        events.Pop();
 
-        segments_on_sweep_line.erase(end_event.segment);
+        segments.Remove(end_event.segment);
 
-        auto left = FirstLessByXOnSweepLine(end_event.segment);
-        auto right = FirstMoreByXOnSweepLine(end_event.segment);
-        bool left_preset = left != segments_on_sweep_line.end();
-        bool right_preset = right != segments_on_sweep_line.end();
-        if (left_preset && right_preset)
+        std::optional<Segment2D> left = segments.FirstLeft(end_event.segment);
+        std::optional<Segment2D> right = segments.FirstRight(end_event.segment);
+        if (left && right)
           ResolveIntersection(*left, *right);
-        // segments_on_sweep_line.erase(end_event->segment);
+
         break;
       }
       case Event::INTERSECTION: {
         const IntersectionEvent int_event =
             *(static_cast<const IntersectionEvent*>(event));
-        events.erase(current_it);
+        events.Pop();
 
-        AddSegmentToEvents({int_event.point, int_event.a_end});
-        AddSegmentToEvents({int_event.point, int_event.b_end});
-        // const Point2D a_end = int_event->a_end;
-        // const Segment2D inta2 = {int_event->point, int_event->a_end};
-        // const Point2D a_begin = top_to_bottom[inta2];
-        // const Segment2D a_segment
-        // const Point2D a_end = int_event->segment_a.b;
-        // const Point2D a_begin = top_to_bottom[int_event->segment_a];
-        // const Segment2D a1int = {segment_a.a, int_point};
-        // const Segment2D b1int = {segment_b.a, int_point};
-        // const Segment2D inta2 = {int_point, segment_a.b};
-        // const Segment2D intb2 = {int_point, segment_b.b};
+        events.AddSegment({int_event.point, int_event.a_end});
+        events.AddSegment({int_event.point, int_event.b_end});
+
         break;
       }
     }

@@ -43,7 +43,7 @@ INSTANTIATE_TEST_SUITE_P(Performance,
 const size_t random_polygon_test_sizes[] = {
   10,
   100,
-  1000
+  300
 };
 
 class RandomPolygonPerformanceTest : public testing::TestWithParam<size_t> {
@@ -51,7 +51,6 @@ class RandomPolygonPerformanceTest : public testing::TestWithParam<size_t> {
   void SetUp() override {
     const size_t test_size = GetParam();
     polygon_v_.reserve(test_size);
-    std::srand(std::time(nullptr));
     for (size_t i = 0; i < test_size; i++) {
       const geom::Point2D point = {DoubleRand(0, 100), DoubleRand(0, 100)};
       polygon_v_.push_back(point);

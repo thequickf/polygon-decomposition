@@ -3,6 +3,7 @@
 
 #include <triangulation_base_geometry.h>
 
+#include <functional>
 #include <optional>
 
 namespace geom {
@@ -40,15 +41,6 @@ bool DoubleEqual(const geom::Segment2D& lhs, const geom::Segment2D& rhs);
 
 std::optional<Point2D> IntersectionPoint(const Segment2D& a,
                                          const Segment2D& b);
-
-struct SegmentOnSweepLineComparator {
-  static double sweep_line_y;
-
-  bool operator()(const Segment2D& lhs, const Segment2D& rhs) const;
-
- // private:
-  static double AnyXAtSweepLine(const Segment2D& segment);
-};
 
 bool IsIntersectionOnVertex(const Segment2D& a, const Segment2D& b);
 

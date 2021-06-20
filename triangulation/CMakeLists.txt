@@ -6,6 +6,7 @@ set(SOURCES
     src/geom_utils.cpp
     src/polygon2d.cpp
     src/resolve_intersections.cpp
+    src/segments_on_y_sweep_line.cpp
     src/triangulate_monotone.cpp
     src/triangulation.cpp)
 set(PUBLIC_HEADERS

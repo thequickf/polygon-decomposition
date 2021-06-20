@@ -102,33 +102,6 @@ std::optional<Point2D> IntersectionPoint(const Segment2D& a,
   return {};
 }
 
-double SegmentOnSweepLineComparator::sweep_line_y = 0;
-
-double SegmentOnSweepLineComparator::AnyXAtSweepLine(const Segment2D& segment) {
-  const Vector2D v = {segment.a, segment.b};
-  if (v.y == 0)
-    return segment.a.x;
-  double k = (sweep_line_y - segment.a.y) / (v.y);
-  return segment.a.x + v.x * k;
-}
-
-bool SegmentOnSweepLineComparator::operator()(
-    const Segment2D& lhs, const Segment2D& rhs) const {
-  if (DoubleEqual(lhs, rhs))
-    return false;
-  const double lhx = AnyXAtSweepLine(lhs), rhx = AnyXAtSweepLine(rhs);
-  if (DoubleEqual(lhx, rhx)) {
-    const bool left = MoreThenPiAngle2D({lhs.a, lhs.b}, {rhs.a, rhs.b});
-    if (DoubleEqual(lhs.a, rhs.a))
-      return left;
-    if (DoubleEqual(lhs.b, rhs.b))
-      return !left;
-    assert(false);
-    return false;
-  }
-  return lhx < rhx;
-}
-
 bool IsIntersectionOnVertex(const Segment2D& a, const Segment2D& b) {
   return DoubleEqual(a.a, b.a) || DoubleEqual(a.a, b.b) ||
          DoubleEqual(a.b, b.a) || DoubleEqual(a.b, b.b);
