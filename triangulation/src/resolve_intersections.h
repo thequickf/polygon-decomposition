@@ -1,7 +1,6 @@
 #ifndef RESOLVE_INTERSECTIONS_H
 #define RESOLVE_INTERSECTIONS_H
 
-#include <geom_utils.h>
 #include <polygon2d.h>
 
 #include <list>

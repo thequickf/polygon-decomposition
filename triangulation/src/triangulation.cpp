@@ -32,8 +32,12 @@ std::optional<Triangle2D> AsTriangle(const Polygon2D& polygon) {
 // Algorithm is based on monotone triangulation
 // https://neerc.ifmo.ru/wiki/index.php?title=Триангуляция_полигонов_(ушная_%2B_монотонная)
 // The main idea:
-//   1. decomosing given polygon to y-monotone polygons (O(NlogN))
-//   2. greedily triangulating each y-monotone polygon (O(N))
+//   1. finding self-intersections with Bentley-Ottmann based algorithm and
+//      resolving intersections using DCEL (O((N+M)log(N+M)))
+//      getting list of simple polygons as a result
+//   2. decomosing simple polygons to y-monotone polygons (O(NlogN))
+//   3. greedily triangulating each y-monotone polygon (O(N))
+// (N - number of vertices, M - number of self-intersections)
 std::vector<Triangle2D> Triangulate(const std::vector<Point2D>& polygon_v) {
   if (polygon_v.size() < 3)
     return {};
