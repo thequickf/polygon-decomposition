@@ -4,6 +4,7 @@
 #include <geom_utils.h>
 #include <polygon2d.h>
 
+#include <array>
 #include <list>
 #include <optional>
 #include <set>
@@ -37,25 +38,51 @@ class DcelPolygon2D {
     mutable const HalfEdge* twin;
 
     HalfEdge(const Vertex* origin, const Vector2D& v);
+
+    void Visit() const { visited_ = true; }
+    bool IsVisited() const { return visited_; }
+
+   private:
+    mutable bool visited_;
+  };
+
+  struct HalfEdgeAngleComparator {
+    bool operator()(const HalfEdge* const& lhp,
+                    const HalfEdge* const& rhp) const {
+      if (DoubleEqual(lhp->angle, rhp->angle))
+        return false;
+      return lhp->angle < rhp->angle;
+    }
+  };
+
+  class HybridEdgeSet {
+   public:
+    void Insert(const HalfEdge* edge);
+    std::tuple<const HalfEdge*, const HalfEdge*> GetNeighbours(
+        const HalfEdge* edge) const;
+    const HalfEdge* LowerBound(const HalfEdge* search_key) const;
+
+   private:
+    static constexpr size_t kSmallCapacity = 4;
+
+    void SpillToTree();
+
+    bool using_tree_ = false;
+    std::array<const HalfEdge*, kSmallCapacity> small_;
+    size_t small_size_ = 0;
+    std::set<const HalfEdge*, HalfEdgeAngleComparator> tree_;
   };
 
   struct Vertex {
-    struct HalfEdgeAngleComparator {
-      bool operator()(const HalfEdge* const& lhp,
-                      const HalfEdge* const& rhp) const {
-        if (DoubleEqual(lhp->angle, rhp->angle))
-          return false;
-        return lhp->angle < rhp->angle;
-      }
-    };
-
     const Point2D point;
-    mutable std::set<const HalfEdge*, HalfEdgeAngleComparator> edges;
+    mutable HybridEdgeSet edges;
 
     explicit Vertex(const Point2D& point) : point(point) {}
 
-    std::tuple<const HalfEdge*,  const HalfEdge*> GetNeighbourHalfEdges(
-        const HalfEdge* edge) const;
+    std::tuple<const HalfEdge*, const HalfEdge*> GetNeighbourHalfEdges(
+        const HalfEdge* edge) const {
+      return edges.GetNeighbours(edge);
+    }
   };
 
   struct Face {
