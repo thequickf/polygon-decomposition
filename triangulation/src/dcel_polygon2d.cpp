@@ -19,19 +19,71 @@ bool IsPointLeftToSegment(const Segment2D& segment, const Point2D& point) {
 DcelPolygon2D::HalfEdge::HalfEdge(const Vertex* origin, const Vector2D& v) :
     origin(origin), angle(std::atan2(v.y, v.x)), visited_(false) {}
 
-std::tuple<const DcelPolygon2D::HalfEdge*, const DcelPolygon2D::HalfEdge*>
-    DcelPolygon2D::Vertex::GetNeighbourHalfEdges(
-    const HalfEdge* edge) const {
-  auto right = edges.upper_bound(edge);
-  if (right == edges.end())
-    right = edges.begin();
+void DcelPolygon2D::HybridEdgeSet::SpillToTree() {
+  for (size_t i = 0; i < small_size_; i++)
+    tree_.insert(small_[i]);
+  using_tree_ = true;
+  small_size_ = 0;
+}
 
-  auto left = edges.upper_bound(edge);
-  if (left == edges.begin())
-    left = edges.end();
-  left--;
-  
-  return std::make_tuple(*left, *right);
+void DcelPolygon2D::HybridEdgeSet::Insert(const HalfEdge* edge) {
+  if (using_tree_) {
+    tree_.insert(edge);
+    return;
+  }
+  if (small_size_ == kSmallCapacity) {
+    SpillToTree();
+    tree_.insert(edge);
+    return;
+  }
+  const HalfEdgeAngleComparator less;
+  size_t pos = 0;
+  while (pos < small_size_ && less(small_[pos], edge))
+    pos++;
+  for (size_t i = small_size_; i > pos; i--)
+    small_[i] = small_[i - 1];
+  small_[pos] = edge;
+  small_size_++;
+}
+
+std::tuple<const DcelPolygon2D::HalfEdge*, const DcelPolygon2D::HalfEdge*>
+    DcelPolygon2D::HybridEdgeSet::GetNeighbours(
+    const HalfEdge* edge) const {
+  if (using_tree_) {
+    auto right = tree_.upper_bound(edge);
+    if (right == tree_.end())
+      right = tree_.begin();
+
+    auto left = tree_.upper_bound(edge);
+    if (left == tree_.begin())
+      left = tree_.end();
+    left--;
+
+    return std::make_tuple(*left, *right);
+  }
+  // upper_bound semantics: first index whose angle is strictly greater
+  // than edge's angle. edge need not be a member (e.g. it usually isn't
+  // yet - this is used to find where a not-yet-inserted edge belongs).
+  const HalfEdgeAngleComparator less;
+  size_t pos = 0;
+  while (pos < small_size_ && !less(edge, small_[pos]))
+    pos++;
+  const size_t right_idx = (pos == small_size_) ? 0 : pos;
+  const size_t left_idx = (pos == 0) ? small_size_ - 1 : pos - 1;
+  return std::make_tuple(small_[left_idx], small_[right_idx]);
+}
+
+const DcelPolygon2D::HalfEdge* DcelPolygon2D::HybridEdgeSet::LowerBound(
+    const HalfEdge* search_key) const {
+  if (using_tree_) {
+    auto it = tree_.lower_bound(search_key);
+    return it == tree_.end() ? nullptr : *it;
+  }
+  const HalfEdgeAngleComparator less;
+  for (size_t i = 0; i < small_size_; i++)
+    if (!less(small_[i], search_key))
+      return small_[i];
+  return nullptr;
 }
 
 bool operator<(const DcelPolygon2D::Vertex& lhv,
@@ -63,7 +115,7 @@ DcelPolygon2D::DcelPolygon2D(const Polygon2D& polygon2D) {
 
     half_edges_.push_back(HalfEdge(vertex, {current->point, next->point}));
     const HalfEdge* edge = &half_edges_.back();
-    vertex->edges.insert(edge);
+    vertex->edges.Insert(edge);
     pnt_to_edge_forward[current] = edge;
 
     current = next;
@@ -91,7 +143,7 @@ DcelPolygon2D::DcelPolygon2D(const Polygon2D& polygon2D) {
 
     half_edges_.push_back(HalfEdge(vertex, {next->point, current->point}));
     const HalfEdge* edge = &half_edges_.back();
-    vertex->edges.insert(edge);
+    vertex->edges.Insert(edge);
 
     pnt_to_edge_forward[current]->twin = edge;
     edge->twin = pnt_to_edge_forward[current];
@@ -150,8 +202,8 @@ void DcelPolygon2D::InsertEdge(const Segment2D& edge) {
   vu_edge->next = u_right;
   u_right->prev = vu_edge;
 
-  u->edges.insert(uv_edge);
-  v->edges.insert(vu_edge);
+  u->edges.Insert(uv_edge);
+  v->edges.Insert(vu_edge);
 
   faces_.push_back(Face(vu_edge));
   faces_.push_back(Face(uv_edge));
@@ -213,10 +265,10 @@ void DcelPolygon2D::ResolveIntersection(const Segment2D& a,
   half_edges_.push_back(HalfEdge(intersection, {intersection->point, b2_pnt}));
   const HalfEdge* intb2he = &half_edges_.back();
 
-  intersection->edges.insert(inta1he);
-  intersection->edges.insert(inta2he);
-  intersection->edges.insert(intb1he);
-  intersection->edges.insert(intb2he);
+  intersection->edges.Insert(inta1he);
+  intersection->edges.Insert(inta2he);
+  intersection->edges.Insert(intb1he);
+  intersection->edges.Insert(intb2he);
 
   inta1he->twin = a1a2he;
   a1a2he->twin = inta1he;
@@ -305,10 +357,9 @@ std::list<Polygon2D> DcelPolygon2D::GetPolygons() const {
 std::optional<const DcelPolygon2D::HalfEdge*> DcelPolygon2D::GetHalfEdge(
     const Vertex* a, const Vertex* b) const {
   const HalfEdge half_edge_for_search = {a, {a->point, b->point}};
-  const auto half_edge_it = a->edges.lower_bound(&half_edge_for_search);
-  if (half_edge_it == a->edges.end())
+  const HalfEdge* half_edge = a->edges.LowerBound(&half_edge_for_search);
+  if (!half_edge)
     return {};
-  const HalfEdge* half_edge = *half_edge_it;
   if (half_edge->next->origin == b)
     return half_edge;
   return {};
