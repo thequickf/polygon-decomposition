@@ -1,8 +1,8 @@
 #include <dcel_polygon2d.h>
 
 #include <cmath>
-#include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace geom {
 
@@ -13,6 +13,24 @@ bool IsPointLeftToSegment(const Segment2D& segment, const Point2D& point) {
   const Vector2D u = {segment.a, segment.b};
   return MoreThenPiAngle2D(v, u);
 }
+
+template <typename T>
+class VertexIndexedMap {
+ public:
+  explicit VertexIndexedMap(const Polygon2D& polygon) :
+      polygon_(polygon), values_(polygon.Size()) {}
+
+  T& operator[](const Polygon2D::Vertex* vertex) {
+    return values_[polygon_.IndexOf(vertex)];
+  }
+  const T& operator[](const Polygon2D::Vertex* vertex) const {
+    return values_[polygon_.IndexOf(vertex)];
+  }
+
+ private:
+  const Polygon2D& polygon_;
+  std::vector<T> values_;
+};
 
 }  // namespace
 
@@ -102,9 +120,8 @@ bool operator!=(const DcelPolygon2D::Face& lhf,
 }
 
 DcelPolygon2D::DcelPolygon2D(const Polygon2D& polygon2D) {
-  std::unordered_map<const Polygon2D::Vertex*, const Vertex*> pnt_to_vertex;
-  std::unordered_map<const Polygon2D::Vertex*, const HalfEdge*>
-      pnt_to_edge_forward;
+  VertexIndexedMap<const Vertex*> pnt_to_vertex(polygon2D);
+  VertexIndexedMap<const HalfEdge*> pnt_to_edge_forward(polygon2D);
 
   const Polygon2D::Vertex* current = polygon2D.GetAnyVertex();
   for (size_t i = 0; i < polygon2D.Size(); i++) {
@@ -134,8 +151,7 @@ DcelPolygon2D::DcelPolygon2D(const Polygon2D& polygon2D) {
 
   faces_.push_back(Face(pnt_to_edge_forward[current]));
 
-  std::unordered_map<const Polygon2D::Vertex*, const HalfEdge*>
-      pnt_to_edge_back;
+  VertexIndexedMap<const HalfEdge*> pnt_to_edge_back(polygon2D);
   for (size_t i = 0; i < polygon2D.Size(); i++) {
     const Polygon2D::Vertex* next = current->next;
 

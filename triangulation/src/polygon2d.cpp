@@ -32,6 +32,10 @@ size_t Polygon2D::Size() const {
   return vertices_.size();
 }
 
+size_t Polygon2D::IndexOf(const Vertex* vertex) const {
+  return vertex - vertices_.data();
+}
+
 const Polygon2D::Vertex* Polygon2D::GetAnyVertex() const {
   if (Size() > 0)
     return &vertices_.front();
