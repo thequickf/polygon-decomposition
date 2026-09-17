@@ -5,6 +5,7 @@
 #include <polygon2d.h>
 
 #include <array>
+#include <deque>
 #include <list>
 #include <optional>
 #include <set>
@@ -100,8 +101,8 @@ class DcelPolygon2D {
   std::optional<const HalfEdge*> GetHalfEdge(
       const Vertex* a, const Vertex* b) const;
 
-  std::list<Face> faces_;
-  std::list<HalfEdge> half_edges_;
+  std::deque<Face> faces_;
+  std::deque<HalfEdge> half_edges_;
   std::set<Vertex> vertices_;
 };
 
