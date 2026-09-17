@@ -5,10 +5,12 @@
 #include <polygon2d.h>
 
 #include <array>
+#include <deque>
 #include <list>
 #include <optional>
 #include <set>
 #include <tuple>
+#include <unordered_set>
 
 namespace geom {
 
@@ -85,6 +87,18 @@ class DcelPolygon2D {
     }
   };
 
+  struct VertexHash {
+    size_t operator()(const Vertex& vertex) const {
+      return std::hash<Point2D>()(vertex.point);
+    }
+  };
+
+  struct VertexEqual {
+    bool operator()(const Vertex& lhv, const Vertex& rhv) const {
+      return lhv.point == rhv.point;
+    }
+  };
+
   struct Face {
     const HalfEdge* edge;
 
@@ -92,17 +106,15 @@ class DcelPolygon2D {
     explicit Face(const HalfEdge* edge) : edge(edge) {}
   };
 
-  friend bool operator<(const Vertex& lhv, const Vertex& rhv);
-
   friend bool operator==(const Face& lhf, const Face& rhf);
   friend bool operator!=(const Face& lhf, const Face& rhf);
 
   std::optional<const HalfEdge*> GetHalfEdge(
       const Vertex* a, const Vertex* b) const;
 
-  std::list<Face> faces_;
-  std::list<HalfEdge> half_edges_;
-  std::set<Vertex> vertices_;
+  std::deque<Face> faces_;
+  std::deque<HalfEdge> half_edges_;
+  std::unordered_set<Vertex, VertexHash, VertexEqual> vertices_;
 };
 
 }  // geom

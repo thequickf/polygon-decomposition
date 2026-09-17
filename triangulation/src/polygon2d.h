@@ -36,6 +36,8 @@ class Polygon2D {
 
   const Vertex* GetAnyVertex() const;
 
+  size_t IndexOf(const Vertex* vertex) const;
+
  private:
   static VertexType GetVertexType(const Vertex* vertex);
   void SetVertexTypes();
