@@ -5,7 +5,8 @@ namespace geom {
 Polygon2D::Polygon2D(const std::vector<Point2D>& points) {
   if (points.size() == 0)
     return;
-  
+
+  vertices_.reserve(points.size());
   vertices_.push_back(Vertex(points[0]));
   Vertex* prev = &vertices_.back();
   for (size_t i = 1; i < points.size(); i++) {
@@ -119,6 +120,7 @@ std::vector<Point2D> AsVector(const Polygon2D& polygon) {
     return {};
   
   std::vector<Point2D> result;
+  result.reserve(polygon.Size());
   const Polygon2D::Vertex* current = polygon.GetAnyVertex();
   for (size_t i = 0; i < polygon.Size(); i++, current = current->next)
     result.push_back(current->point);
@@ -130,6 +132,7 @@ std::vector<const Polygon2D::Vertex*> AsVertexVector(const Polygon2D& polygon) {
     return {};
   
   std::vector<const Polygon2D::Vertex*> result;
+  result.reserve(polygon.Size());
   const Polygon2D::Vertex* current = polygon.GetAnyVertex();
   for (size_t i = 0; i < polygon.Size(); i++, current = current->next)
     result.push_back(current);

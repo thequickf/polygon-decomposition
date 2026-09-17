@@ -4,7 +4,6 @@
 #include <geom_utils.h>
 
 #include <functional>
-#include <list>
 #include <vector>
 
 namespace geom {
@@ -45,7 +44,7 @@ class Polygon2D {
   bool IsClockwise() const;
   void NormalizeDirection();
 
-  std::list<Vertex> vertices_;
+  std::vector<Vertex> vertices_;
 };
 
 struct YFirstVertexComparator {
