@@ -104,11 +104,6 @@ const DcelPolygon2D::HalfEdge* DcelPolygon2D::HybridEdgeSet::LowerBound(
   return nullptr;
 }
 
-bool operator<(const DcelPolygon2D::Vertex& lhv,
-               const DcelPolygon2D::Vertex& rhv) {
-  return lhv.point < rhv.point;
-}
-
 bool operator==(const DcelPolygon2D::Face& lhf,
                 const DcelPolygon2D::Face& rhf) {
   return lhf.edge == rhf.edge;
@@ -120,6 +115,7 @@ bool operator!=(const DcelPolygon2D::Face& lhf,
 }
 
 DcelPolygon2D::DcelPolygon2D(const Polygon2D& polygon2D) {
+  vertices_.reserve(polygon2D.Size());
   VertexIndexedMap<const Vertex*> pnt_to_vertex(polygon2D);
   VertexIndexedMap<const HalfEdge*> pnt_to_edge_forward(polygon2D);
 
