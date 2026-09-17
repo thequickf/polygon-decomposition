@@ -17,6 +17,7 @@ add_library(${PROJECT_NAME} SHARED ${SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES
     PUBLIC_HEADER "${PUBLIC_HEADERS}")
 target_include_directories(${PROJECT_NAME} PRIVATE include src)
+target_link_options(${PROJECT_NAME} PRIVATE -Wl,-Bsymbolic-functions)
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
