@@ -37,6 +37,12 @@ class DcelPolygon2D {
     mutable const HalfEdge* twin;
 
     HalfEdge(const Vertex* origin, const Vector2D& v);
+
+    void Visit() const { visited_ = true; }
+    bool IsVisited() const { return visited_; }
+
+   private:
+    mutable bool visited_;
   };
 
   struct Vertex {

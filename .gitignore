@@ -6,3 +6,6 @@ build/*
 
 # Benchmark run output (not tracked)
 benchmarks/baselines/
+
+# Scratch/temp files (not tracked)
+tmp/

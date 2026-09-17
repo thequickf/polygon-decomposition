@@ -17,7 +17,7 @@ bool IsPointLeftToSegment(const Segment2D& segment, const Point2D& point) {
 }  // namespace
 
 DcelPolygon2D::HalfEdge::HalfEdge(const Vertex* origin, const Vector2D& v) :
-    origin(origin), angle(std::atan2(v.y, v.x)) {}
+    origin(origin), angle(std::atan2(v.y, v.x)), visited_(false) {}
 
 std::tuple<const DcelPolygon2D::HalfEdge*, const DcelPolygon2D::HalfEdge*>
     DcelPolygon2D::Vertex::GetNeighbourHalfEdges(
@@ -267,12 +267,11 @@ std::list<Polygon2D> DcelPolygon2D::GetPolygons() const {
         area(area), polygon_v(std::forward<std::vector<Point2D>>(polygon_v)) {}
   };
 
-  std::set<const HalfEdge*> visited;
   std::list<PolygonWithArea> res_polygons;
   long double max_area = 0;
   for (const Face& face : faces_) {
     const HalfEdge* start_edge = face.edge;
-    if (visited.count(start_edge))
+    if (start_edge->IsVisited())
       continue;
     std::vector<Point2D> polygon_vector;
     const HalfEdge* edge = face.edge;
@@ -281,7 +280,7 @@ std::list<Polygon2D> DcelPolygon2D::GetPolygons() const {
       const Point2D current_pnt = edge->origin->point;
       const Point2D next_pnt = edge->next->origin->point;
       polygon_vector.push_back(edge->origin->point);
-      visited.insert(edge);
+      edge->Visit();
 
       area += (next_pnt.x - current_pnt.x) * (next_pnt.y + current_pnt.y);
       edge = edge->next;
