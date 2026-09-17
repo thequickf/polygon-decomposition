@@ -3,3 +3,6 @@
 
 # Build
 build/*
+
+# Benchmark run output (not tracked)
+benchmarks/baselines/
