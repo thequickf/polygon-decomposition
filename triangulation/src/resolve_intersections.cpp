@@ -22,6 +22,8 @@ struct Event {
   const Point2D point;
   const EventType type;
 
+  virtual ~Event() = default;
+
  protected:
   Event(const Point2D& point, const EventType type) :
       point(point), type(type) {}
